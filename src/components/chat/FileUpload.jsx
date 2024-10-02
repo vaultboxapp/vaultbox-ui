@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '../ui/Button';
+import { Button } from '../ui/button';
 import { Upload, X } from 'lucide-react';
 
 export default function FileUpload({ onFileUpload, onClose }) {
