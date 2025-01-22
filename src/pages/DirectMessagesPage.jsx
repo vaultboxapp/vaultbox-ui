@@ -5,8 +5,7 @@ import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
 import { useMessages } from '../hooks/useMessages';
 import { users } from '../data/users';
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RightSidebar from '../components/layout/RightSidebar';
 
 export default function DirectMessagesPage() {
@@ -56,7 +55,6 @@ export default function DirectMessagesPage() {
 
   const LeftSidebar = () => (
     <div className="w-64 bg-muted/40 p-4 border-r border-border">
-      
       {users.map(user => (
         <div
           key={user.id}

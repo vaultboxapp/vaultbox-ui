@@ -5,7 +5,6 @@ import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
 import { useMessages } from '../hooks/useMessages';
 import { channels } from '../data/channels';
-import { Button } from "@/components/ui/button"
 import RightSidebar from '../components/layout/RightSidebar';
 
 export default function ChannelsPage() {
@@ -52,7 +51,6 @@ export default function ChannelsPage() {
 
   const LeftSidebar = () => (
     <div className="w-64 bg-muted/40 p-4 border-r border-border">
-      
       {channels.map(channel => (
         <div
           key={channel.id}

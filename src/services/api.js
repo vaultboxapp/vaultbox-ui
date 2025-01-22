@@ -1,7 +1,26 @@
 // This file will contain all the API calls to the backend
 // For now, it's just a placeholder
 
+
+// Create an Axios instance
+const axiosInstance = axios.create({
+  baseURL: process.env.REACT_APP_API_URL,
+});
+
+// Add a request interceptor to include the JWT token in the headers
+axiosInstance.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 export const api = {
+
+
     // User related API calls
     getUsers: () => {
       // Return a promise that resolves with the list of users
