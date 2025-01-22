@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
-import { useMessages } from '../hooks/useMessages';
+import { api } from '../services/api';
 import { channels } from '../data/channels';
 import RightSidebar from '../components/layout/RightSidebar';
 
@@ -11,25 +11,22 @@ export default function ChannelsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedChannel, setSelectedChannel] = useState(null);
-  const { messages, sendMessage, uploadFile, recentDocuments } = useMessages('channels');
-  const [localMessages, setLocalMessages] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [recentDocuments, setRecentDocuments] = useState([]);
 
   useEffect(() => {
     if (id) {
       const channel = channels.find(c => c.id.toString() === id);
       setSelectedChannel(channel || null);
+      if (channel) {
+        api.getInitialChannelMessages(channel.id).then(response => {
+          setMessages(response.data);
+        });
+      }
     } else {
       setSelectedChannel(null);
     }
   }, [id]);
-
-  useEffect(() => {
-    if (selectedChannel) {
-      setLocalMessages(messages.filter(m => m.channelId === selectedChannel.id));
-    } else {
-      setLocalMessages([]);
-    }
-  }, [selectedChannel, messages]);
 
   const handleChannelSelect = (channel) => {
     navigate(`/channels/${channel.id}`);
@@ -37,15 +34,15 @@ export default function ChannelsPage() {
 
   const handleSendMessage = async (content) => {
     if (selectedChannel) {
-      const newMessage = await sendMessage(content, selectedChannel.id);
-      setLocalMessages(prev => [...prev, newMessage]);
+      const newMessage = await api.sendChannelMessage(selectedChannel.id, { content });
+      setMessages(prev => [...prev, newMessage.data]);
     }
   };
 
   const handleFileUpload = async (file) => {
     if (selectedChannel) {
-      const uploadedFile = await uploadFile(file, selectedChannel.id);
-      setLocalMessages(prev => [...prev, uploadedFile]);
+      const uploadedFile = await api.uploadChannelFile(selectedChannel.id, file);
+      setMessages(prev => [...prev, uploadedFile.data]);
     }
   };
 
@@ -75,7 +72,7 @@ export default function ChannelsPage() {
       <div className="flex flex-col h-full">
         {selectedChannel ? (
           <>
-            <MessageList messages={localMessages} />
+            <MessageList messages={messages} />
             <MessageInput 
               onSendMessage={handleSendMessage} 
               onFileUpload={handleFileUpload} 

@@ -1,10 +1,9 @@
-// This file will contain all the API calls to the backend
-// For now, it's just a placeholder
-
+import axios from 'axios';
+import { getToken } from '../utils/jwtUtils';
 
 // Create an Axios instance
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: 'http://localhost:3000', // Replace with your backend URL
 });
 
 // Add a request interceptor to include the JWT token in the headers
@@ -19,59 +18,36 @@ axiosInstance.interceptors.request.use((config) => {
 });
 
 export const api = {
+  // User related API calls
+  getUsers: () => axiosInstance.get('/users'),
 
+  // Message related API calls
+  getInitialMessages: () => axiosInstance.get('/messages'),
+  getMessagesForUser: (userId) => axiosInstance.get(`/messages/getchat/${userId}`),
+  sendMessage: (message) => axiosInstance.post('/messages', message),
 
-    // User related API calls
-    getUsers: () => {
-      // Return a promise that resolves with the list of users
-      return Promise.resolve([])
-    },
-    
-    // Message related API calls
-    getInitialMessages: () => {
-      // Return a promise that resolves with the initial list of messages
-      return Promise.resolve([])
-    },
-    
-    getMessagesForUser: (userId) => {
-      // Return a promise that resolves with the messages for a specific user
-      return Promise.resolve([])
-    },
-    
-    sendMessage: (message) => {
-      // Return a promise that resolves when the message is sent
-      return Promise.resolve()
-    },
-    
-    // File related API calls
-    uploadFile: (file) => {
-      // Return a promise that resolves with the uploaded file information
-      return Promise.resolve({})
-    },
-    
-    // Channel related API calls
-    getChannels: () => {
-      // Return a promise that resolves with the list of channels
-      return Promise.resolve([])
-    },
-    
-    getInitialChannelMessages: () => {
-      // Return a promise that resolves with the initial list of channel messages
-      return Promise.resolve([])
-    },
-    
-    getMessagesForChannel: (channelId) => {
-      // Return a promise that resolves with the messages for a specific channel
-      return Promise.resolve([])
-    },
-    
-    sendChannelMessage: (channelId, message) => {
-      // Return a promise that resolves when the channel message is sent
-      return Promise.resolve()
-    },
-    
-    uploadChannelFile: (channelId, file) => {
-      // Return a promise that resolves with the uploaded channel file information
-      return Promise.resolve({})
-    },
-  }
+  // File related API calls
+  uploadFile: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axiosInstance.post('/messages/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Channel related API calls
+  getChannels: () => axiosInstance.get('/channels'),
+  getInitialChannelMessages: (channelId) => axiosInstance.get(`/channels/getchat/${channelId}`),
+  sendChannelMessage: (channelId, message) => axiosInstance.post(`/channels/${channelId}/messages`, message),
+  uploadChannelFile: (channelId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axiosInstance.post(`/channels/${channelId}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+};

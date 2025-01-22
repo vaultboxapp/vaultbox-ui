@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
-import { useMessages } from '../hooks/useMessages';
+import { api } from '../services/api';
 import { users } from '../data/users';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RightSidebar from '../components/layout/RightSidebar';
@@ -12,28 +12,22 @@ export default function DirectMessagesPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedUser, setSelectedUser] = useState(null);
-  const { messages, sendMessage, uploadFile, recentDocuments } = useMessages('direct');
-  const [localMessages, setLocalMessages] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [recentDocuments, setRecentDocuments] = useState([]);
 
   useEffect(() => {
     if (id) {
       const user = users.find(u => u.id.toString() === id);
       setSelectedUser(user || null);
+      if (user) {
+        api.getMessagesForUser(user.id).then(response => {
+          setMessages(response.data);
+        });
+      }
     } else {
       setSelectedUser(null);
     }
   }, [id]);
-
-  useEffect(() => {
-    if (selectedUser) {
-      setLocalMessages(messages.filter(m => 
-        (m.senderId === selectedUser.id && m.receiverId === users[0].id) || 
-        (m.senderId === users[0].id && m.receiverId === selectedUser.id)
-      ));
-    } else {
-      setLocalMessages([]);
-    }
-  }, [selectedUser, messages]);
 
   const handleUserSelect = (user) => {
     navigate(`/direct-messages/${user.id}`);
@@ -41,15 +35,15 @@ export default function DirectMessagesPage() {
 
   const handleSendMessage = async (content) => {
     if (selectedUser) {
-      const newMessage = await sendMessage(content, selectedUser.id);
-      setLocalMessages(prev => [...prev, newMessage]);
+      const newMessage = await api.sendMessage({ content, receiverId: selectedUser.id });
+      setMessages(prev => [...prev, newMessage.data]);
     }
   };
 
   const handleFileUpload = async (file) => {
     if (selectedUser) {
-      const uploadedFile = await uploadFile(file, selectedUser.id);
-      setLocalMessages(prev => [...prev, uploadedFile]);
+      const uploadedFile = await api.uploadFile(file);
+      setMessages(prev => [...prev, uploadedFile.data]);
     }
   };
 
@@ -82,7 +76,7 @@ export default function DirectMessagesPage() {
       <div className="flex flex-col h-full">
         {selectedUser ? (
           <>
-            <MessageList messages={localMessages} currentUser={users[0]} />
+            <MessageList messages={messages} currentUser={users[0]} />
             <MessageInput 
               onSendMessage={handleSendMessage} 
               onFileUpload={handleFileUpload} 
