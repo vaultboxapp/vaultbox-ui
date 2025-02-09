@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
+import { Logo } from "@/components/ui/logo";
 
 const navItems = [
   { icon: Search, label: "Search", path: "/search" },
@@ -68,11 +69,7 @@ export function AppSidebar() {
       {/* Header */}
       <SidebarHeader>
         <div className="flex items-center justify-between p-6">
-          <img
-            src="/src/assets/logo_icon.svg"
-            alt="logo"
-            className="w-10 h-10"
-          />
+          <Logo/>
           <ThemeToggle />
         </div>
       </SidebarHeader>
