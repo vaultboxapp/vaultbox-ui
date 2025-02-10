@@ -18,12 +18,6 @@ export function Loading() {
           <Logo className="h-16 w-auto" />
         </motion.div>
 
-        {/* Smooth Spinner */}
-        <motion.div
-          className="h-4 w-4 border-2 border-gray-300 border-t-primary rounded-full"
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-        />
       </motion.div>
     </div>
   );

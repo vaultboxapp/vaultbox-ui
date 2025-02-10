@@ -48,10 +48,10 @@ const Layout = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex min-h-screen overflow-hidden bg-background">
       <AppSidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <header className="flex items-center h-16 px-6 border-b">
+        <header className="flex items-center h-16 w-screen px-6 border-b shrink-0">
           <SidebarTrigger className="mr-4" />
           <div className="flex-1">
             <Breadcrumb>
@@ -72,7 +72,7 @@ const Layout = () => {
             </Breadcrumb>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1  overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

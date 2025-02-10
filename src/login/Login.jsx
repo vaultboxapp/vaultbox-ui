@@ -9,6 +9,7 @@ import { AlertCircle, EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react";
 import { login, verifyOTP, getUserById } from "@/services/autheService";
 import { Loading } from "@/components/ui/loading";
 import { useAuth } from "@/context/auth";
+import { Logo } from "@/components/ui/logo"; 
 
 export default function Login() {
   const { handleLoginSuccess } = useAuth();
@@ -82,14 +83,17 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full h-screen lg:grid lg:grid-cols-2 bg-[#09090B] text-gray-100">
-      <div className="flex items-center justify-center">
+    <div className="w-full h-screen bg-white text-gray-900 flex flex-col lg:flex-row">
+      <div className="flex-1 flex items-center justify-center">
         <div className="w-[350px] max-w-[90%] space-y-6">
+          <div className="flex justify-center"> {/* Center the logo */}
+            <Logo className="h-12 w-auto" /> {/* Adjust logo size as needed */}
+          </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              {step === "login" ? "Login" : "Verify It's You"}
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {step === "login" ? "Login to access" : "Verify It's You"}
             </h1>
-            <p className="text-sm text-gray-400 font-mono">
+            <p className="text-sm text-gray-500">
               {step === "login"
                 ? "Enter your email and password to login to your account"
                 : "We've sent a 6-digit code to your email. Please enter it below to verify your identity."}
@@ -105,32 +109,34 @@ export default function Login() {
           {step === "login" ? (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="font-thin text-xs">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
+                  placeholder="yourname@gmail.com"
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="font-thin text-xs">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
+                    placeholder="pass1234"
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                   <button type="button" onClick={togglePasswordVisibility} className="absolute right-2 top-2">
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    {showPassword ? <EyeOffIcon className="text-gray-600" /> : <EyeIcon className="text-gray-600" />}
                   </button>
                 </div>
               </div>
-              <Button type="submit" disabled={loading}>
-                {loading ? <LoaderIcon className="animate-spin" /> : "Verify"}
+              <Button className="rounded-lg w-full" type="submit" disabled={loading}> {/* Full width button */}
+                {loading ? <LoaderIcon className="animate-spin mr-2" /> : "Verify"}
               </Button>
             </form>
           ) : (
@@ -146,15 +152,15 @@ export default function Login() {
                   required
                 />
               </div>
-              <Button type="submit" disabled={loading}>
-                {loading ? <LoaderIcon className="animate-spin" /> : "Verify"}
+              <Button className="rounded-lg w-full" type="submit" disabled={loading}> {/* Full width button */}
+                {loading ? <LoaderIcon className="animate-spin mr-2" /> : "Verify"}
               </Button>
             </form>
           )}
         </div>
       </div>
-      <div className="hidden lg:block">
-        <img src="src/assets/new.jpeg" alt="Decorative background" className="h-full w-full object-cover" />
+      <div className="hidden lg:block flex-1 h-screen">
+        <img src="src/assets/img3.jpg" alt="Decorative background" className="h-full w-full object-cover" />
       </div>
     </div>
   );
