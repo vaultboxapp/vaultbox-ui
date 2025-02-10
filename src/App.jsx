@@ -10,12 +10,13 @@ import { AuthWrapper } from "@/components/AuthWrapper";
 import Layout from "@/components/ui/Layout";
 import Dashboard from "./pages/Dashboard";
 import Search from "./pages/Search";
-import VideoMeeting from "./pages/VideoMeeting";
+import VideoMeeting from "./JitsiMeet/VideoMeeting";
+
 import Channels from "./pages/Channels";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound"; // 404 Page
-import { Loading} from "@/components/ui/loading"; // Import your Loading component
+import { Loading } from "@/components/ui/loading"; // Import your Loading component
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,8 @@ function AppContent() {
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             </Route>
           </Route>
+
+          
 
           {/* Catch-all Route for 404 */}
           <Route path="*" element={<NotFound />} />
