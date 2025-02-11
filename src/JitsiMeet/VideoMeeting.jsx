@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/auth";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import JitsiMeetComponent from "./JitsiMeetComponent";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,14 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Copy, Video, Users, X } from 'lucide-react';
+import { Copy, Video, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const VideoMeeting = () => {
   const { user } = useAuth();
-  const [roomName, setRoomName] = useState("");
   const [inputRoomName, setInputRoomName] = useState("");
-  const [jwtToken, setJwtToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
@@ -43,8 +40,8 @@ const VideoMeeting = () => {
         throw new Error("Token not received");
       }
       
-      setJwtToken(response.data.token);
-      setRoomName(room);
+      // Navigate to the dynamic meeting URL, passing the token via state.
+      navigate(`/video/${room}`, { state: { token: response.data.token } });
       showAlert(isJoining ? "Successfully joined the meeting" : "Meeting created successfully");
     } catch (error) {
       showAlert("Failed to retrieve meeting token. Please try again.", "error");
@@ -70,16 +67,8 @@ const VideoMeeting = () => {
     fetchToken(inputRoomName.trim());
   };
 
-  const handleMeetingEnd = () => {
-    setRoomName("");
-    setJwtToken("");
-    setInputRoomName("");
-    showAlert("Left the meeting");
-    navigate(-1);
-  };
-
   const copyMeetingLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/join/${inputRoomName}`);
+    navigator.clipboard.writeText(`${window.location.origin}/video/${inputRoomName}`);
     showAlert("Meeting link copied to clipboard");
   };
 
@@ -103,112 +92,94 @@ const VideoMeeting = () => {
         )}
       </AnimatePresence>
 
-      {roomName && jwtToken ? (
-        <div className="w-full h-screen relative">
-          <Button
-            variant="ghost"
-            className="absolute top-4 right-4 z-10"
-            onClick={handleMeetingEnd}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Leave Meeting
-          </Button>
-          <JitsiMeetComponent
-            roomName={roomName}
-            user={user}
-            jwtToken={jwtToken}
-            onMeetingEnd={handleMeetingEnd}
-          />
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight">Vaultbox Meeting </h1>
+          <p className="mt-2 text-muted-foreground">
+            Secure, high-quality video meetings for teams
+          </p>
         </div>
-      ) : (
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Vaultbox Meeting — Krazyy</h1>
-            <p className="mt-2 text-muted-foreground">
-              Secure, high-quality video meetings for teams
-            </p>
-          </div>
 
-          <Card className="border-2 bg-transparent">
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                <div className="flex items-center justify-center space-x-2">
-                  <Label htmlFor="meeting-type">Join</Label>
-                  <Switch
-                    id="meeting-type"
-                    checked={!isJoining}
-                    onCheckedChange={() => setIsJoining(!isJoining)}
+        <Card className="border-2 bg-transparent">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-center space-x-2">
+                <Label htmlFor="meeting-type">Join</Label>
+                <Switch
+                  id="meeting-type"
+                  checked={!isJoining}
+                  onCheckedChange={() => setIsJoining(!isJoining)}
+                />
+                <Label htmlFor="meeting-type">Create</Label>
+              </div>
+
+              <motion.div
+                initial={false}
+                animate={{ opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label>
+                    {isJoining ? "Meeting Link or ID" : "Room Name"}
+                  </Label>
+                  <Input
+                    placeholder={
+                      isJoining
+                        ? "Enter meeting link or ID"
+                        : "Enter room name"
+                    }
+                    value={inputRoomName}
+                    onChange={(e) => setInputRoomName(e.target.value)}
                   />
-                  <Label htmlFor="meeting-type">Create</Label>
                 </div>
 
-                <motion.div
-                  initial={false}
-                  animate={{ x: isJoining ? 0 : 0, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label>
-                      {isJoining ? "Meeting Link or ID" : "Room Name"}
-                    </Label>
-                    <Input
-                      placeholder={
-                        isJoining
-                          ? "Enter meeting link or ID"
-                          : "Enter room name"
-                      }
-                      value={inputRoomName}
-                      onChange={(e) => setInputRoomName(e.target.value)}
-                    />
-                  </div>
-
-                  {inputRoomName && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                      <span className="truncate">
-                        {window.location.origin}/join/{inputRoomName}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={copyMeetingLink}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  )}
-
-                  {!isJoining && user.role === "admin" && (
+                {inputRoomName && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <span className="truncate">
+                      {window.location.origin}/video/{inputRoomName}
+                    </span>
                     <Button
-                      className="w-full"
-                      onClick={handleCreateMeeting}
-                      disabled={loading}
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyMeetingLink}
                     >
-                      <Video className="mr-2 h-4 w-4" />
-                      {loading ? "Creating..." : "Create Meeting"}
+                      <Copy className="h-4 w-4" />
                     </Button>
-                  )}
+                  </motion.div>
+                )}
 
-                  {isJoining && (
-                    <Button
-                      className="w-full"
-                      onClick={handleJoinMeeting}
-                      disabled={loading}
-                    >
-                      <Users className="mr-2 h-4 w-4" />
-                      {loading ? "Joining..." : "Join Meeting"}
-                    </Button>
-                  )}
-                </motion.div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                {!isJoining && user.role === "admin" && (
+                  <Button
+                    className="w-full"
+                    onClick={handleCreateMeeting}
+                    disabled={loading}
+                  >
+                    <Video className="mr-2 h-4 w-4" />
+                    {loading ? "Creating..." : "Create Meeting"}
+                  </Button>
+                )}
+
+                {isJoining && (
+                  <Button
+                    className="w-full"
+                    onClick={handleJoinMeeting}
+                    disabled={loading}
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    {loading ? "Joining..." : "Join Meeting"}
+                  </Button>
+                )}
+                
+              </motion.div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

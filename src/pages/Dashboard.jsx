@@ -1,81 +1,107 @@
-import React from "react";
-import { useAuth } from "@/context/auth";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronRightIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/auth"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ChevronRightIcon, Users, Calendar, BarChart, MessageCircle } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
   const overviewItems = [
     {
       title: "Messages",
-      description: "View and manage your messages.",
-      coverImage: "/images/messages-cover.jpg", // Replace with your image path
+      description: "View and manage your messages",
+      icon: MessageCircle,
       route: "/messages",
-    },
-    {
-      title: "Settings",
-      description: "Configure your account settings.",
-      coverImage: "/images/settings-cover.jpg", // Replace with your image path
-      route: "/settings",
+      stat: "15 unread",
     },
     {
       title: "Meetings",
-      description: "Schedule and join meetings.",
-      coverImage: "/images/meetings-cover.jpg", // Replace with your image path
-      route: "/meetings",
+      description: "Schedule and join meetings",
+      icon: Calendar,
+      route: "/video",
+      stat: "2 upcoming",
     },
     {
-      title: "Profile",
-      description: "Manage your profile information.",
-      coverImage: "/images/profile-cover.jpg", // Replace with your image path
-      route: "/profile",
+      title: "Team",
+      description: "Manage your team members",
+      icon: Users,
+      route: "/team",
+      stat: "8 members",
     },
-    // Add more items as needed
-  ];
+    {
+      title: "Analytics",
+      description: "View your performance metrics",
+      icon: BarChart,
+      route: "/analytics",
+      stat: "7% increase",
+    },
+  ]
 
   return (
     <div className="w-full min-h-screen bg-background p-4 lg:p-6">
       <div className="container mx-auto max-w-7xl">
-       
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome, {user?.name}</h1>
-            <p className="text-gray-500">Email: {user?.email}</p>
-            <p className="text-gray-500">Role: {user?.role}</p>
-
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Welcome back, {user?.name}</h1>
+          <p className="text-xl text-gray-500">Here's what's happening with your account today.</p>
         </div>
 
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {overviewItems.map((item, index) => (
-            <Card key={index} className="bg-card">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {item.title}
-                  <Button variant="ghost" size="icon" onClick={() => navigate(item.route)}>
-                    <ChevronRightIcon className="h-4 w-4" />
-                  </Button>
-                </CardTitle>
+            <Card key={index} className="bg-card hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                <item.icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent className="p-0 overflow-hidden relative">
-                <img
-                  src={item.coverImage}
-                  alt={item.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <p className="text-white text-lg">{item.description}</p>
-                </div>
+              <CardContent>
+                <div className="text-2xl font-bold">{item.stat}</div>
+                <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                <Button variant="ghost" className="w-full mt-4 justify-between" onClick={() => navigate(item.route)}>
+                  View details
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        <div className="mt-12">
+          <h2 className="text-2xl font-semibold mb-4">Recent Activity</h2>
+          {/* Add a component here to show recent activities or a timeline */}
+        </div>
+
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-2">
+                <Button onClick={() => navigate("/video")}>Start a Meeting</Button>
+                <Button variant="outline" onClick={() => navigate("/messages")}>
+                  Send a Message
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/settings")}>
+                  Update Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Add a component here to show user stats or a chart */}
+              <p>Placeholder for user statistics or chart</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard
+

@@ -1,13 +1,12 @@
-"use client";
+'use client';
 
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import {
-  LayoutGrid,
+  Home,
   Video,
-  Search,
-  MessageCircle,
+  MessageSquare,
   Hash,
   LogOut,
   Settings,
@@ -36,12 +35,11 @@ import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { Logo } from "@/components/ui/logo";
 
 const navItems = [
-  { icon: Search, label: "Search", path: "/search" },
-  { icon: LayoutGrid, label: "Overview", path: "/dashboard" },
+  { icon: Home, label: "Overview", path: "/dashboard" },
   { icon: Video, label: "Video Meeting", path: "/video" },
   { icon: Hash, label: "Channels", path: "/channels" },
-  { icon: MessageCircle, label: "Messages", path: "/messages" },
-  { icon: Settings, label: "Settings", path: "/settings" }, // ✅ Added Settings
+  { icon: MessageSquare, label: "Messages", path: "/messages" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const getInitials = (name) =>
@@ -65,11 +63,11 @@ export function AppSidebar() {
   if (!isAuthenticated) return null;
 
   return (
-    <Sidebar className="font-sans">
+    <Sidebar className="font-sans bg-white dark:bg-black">
       {/* Header */}
       <SidebarHeader>
         <div className="flex items-center justify-between p-6">
-          <Logo/>
+          <Logo />
           <ThemeToggle />
         </div>
       </SidebarHeader>
@@ -87,13 +85,11 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname.startsWith(path)}
-                    tooltip={label}
-                    // Changed hover color to a neutral tone
                     className="px-6 py-3 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
                   >
-                    <Link to={path} className="flex items-center space-x-4">
+                    <Link to={path} className="flex items-center">
                       <Icon className="w-5 h-5" />
-                      <span className="text-sm font-medium">{label}</span>
+                      <span className="ml-4 text-sm font-medium">{label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -108,7 +104,10 @@ export function AppSidebar() {
         <div className="p-6">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full flex items-center p-0">
+              <Button
+                variant="ghost"
+                className="w-full flex items-center p-0 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              >
                 <Avatar className="w-10 h-10 mr-3">
                   <AvatarFallback>{getInitials(user?.name || "User")}</AvatarFallback>
                 </Avatar>
