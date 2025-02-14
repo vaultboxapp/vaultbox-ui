@@ -6,16 +6,20 @@ import axios from "axios";
 import JitsiMeetComponent from "./JitsiMeetComponent";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useAuth } from "@/context/auth";
 
 const MeetingRoom = () => {
-  const { roomId } = useParams(); // Get room name from URL
+  const { user } = useAuth();
+  const { roomId } = useParams(); // Room identifier from URL (could be a meeting ID or name)
   const location = useLocation();
   const navigate = useNavigate();
+  const [inMeeting, setInMeeting] = useState(true);
   const [jwtToken, setJwtToken] = useState(location.state?.token || "");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!jwtToken) {
+    // Only admins need to fetch a token; normal users join without one.
+    if (user.role === "admin" && !jwtToken) {
       setLoading(true);
       axios
         .post(
@@ -34,32 +38,36 @@ const MeetingRoom = () => {
           console.error("Error fetching token:", error);
         })
         .finally(() => setLoading(false));
+    } else if (user.role !== "admin") {
+      // For non-admin users, we simply set token to empty.
+      setJwtToken("");
     }
-  }, [roomId, jwtToken]);
+  }, [roomId, jwtToken, user.role]);
 
   const handleMeetingEnd = () => {
-    navigate("/video"); // Navigate back to the meeting creation page
+    setInMeeting(false);
   };
 
   if (loading) return <div>Loading meeting...</div>;
-  if (!jwtToken) return <div>Error: No token available.</div>;
+  // For admins, if token is required but not available, show an error.
+  if (user.role === "admin" && !jwtToken) return <div>Error: No token available.</div>;
 
   return (
     <div className="w-full h-screen relative">
-      <Button
-        variant="ghost"
-        className="absolute top-4 right-4 z-10"
-        onClick={handleMeetingEnd}
-      >
-        <X className="h-4 w-4 mr-2" />
-        Leave Meeting
-      </Button>
-      <JitsiMeetComponent
-        roomName={roomId}
-        user={{ username: "Guest" }}  // Replace with actual user info if available
-        jwtToken={jwtToken}
-        onMeetingEnd={handleMeetingEnd}
-      />
+      {inMeeting ? (
+        <JitsiMeetComponent
+          roomName={roomId}
+          // Use user.username; fallback to "Guest" if not defined.
+          user={user.username || "Guest"}
+          jwtToken={jwtToken}
+          onMeetingEnd={handleMeetingEnd}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full">
+          <p>You have left the meeting.</p>
+          <Button onClick={() => navigate("/video")}>Back</Button>
+        </div>
+      )}
     </div>
   );
 };
