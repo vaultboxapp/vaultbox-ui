@@ -2,12 +2,12 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://localhost:5000", 
+   baseURL: '/api', 
   withCredentials: true,
 });
 
 export const chatAPI = axios.create({
-  baseURL: "https://vaultbox",
+  baseURL: "/",
   withCredentials: true,
 });
 

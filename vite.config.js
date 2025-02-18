@@ -5,20 +5,28 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: 'vaultbox',
-    port: 4001,
-    proxy :{
-      '/socket.io': {
-        target: 'http://vaultbox', // Match your Nginx config
-        ws: true,
+    proxy: {
+      '/api': {
+        target: 'http://vaultbox',
         changeOrigin: true,
-        secure: false, // Disable SSL verification if needed
+        secure: false, // use true if vaultbox has a valid SSL certificate
       },
-    }
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+      '/messages': {
+        target: 'http://vaultbox',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/channels': {
+        target: 'http://vaultbox',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/chat': {
+        target: 'http://vaultbox',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
     },
   },
 });

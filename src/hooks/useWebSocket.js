@@ -18,8 +18,8 @@ export const useWebSocket = (userId, onMessage) => {
     }
 
     // Create new connection with stable user ID
-    ws.current = io("wss://vaultbox", {  // Remove "/chat" from URL
-      path: "/socket.io",
+    ws.current = io("/", {  // Remove "/chat" from URL
+      path: "/chat/socket.io",
       transports: ["websocket"],
       query: { userId: stableUserId.current },
       withCredentials: true,
