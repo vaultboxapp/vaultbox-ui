@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react";
-import { login, verifyOTP, getUserById } from "@/services/autheService";
+import { login, verifyOTP } from "@/services/autheService"; // remove getUserById call here
 import { Loading } from "@/components/ui/loading";
 import { useAuth } from "@/context/auth";
 import { Logo } from "@/components/ui/logo"; 
@@ -21,6 +21,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [step, setStep] = useState("login"); // 'login' or 'otp'
   const [loading, setLoading] = useState(false);
+  // Store temporary userId here:
+  const [tempUserId, setTempUserId] = useState(null);
   const navigate = useNavigate();
 
   // Handle the login submission and store the temporary userId.
@@ -30,8 +32,11 @@ export default function Login() {
     setLoading(true);
     try {
       const result = await login(email, password);
+      // Assuming the login API returns { userId } on successful login:
+      setTempUserId(result.userId);
+      // Store the temporary userId in localStorage:
+      localStorage.setItem("tempUserId", result.userId);
       setStep("otp");
-      // The temporary userId is already stored in localStorage by the login API.
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
@@ -46,22 +51,26 @@ export default function Login() {
       setLoading(true);
       setError("");
 
-      // The verifyOTP function retrieves the temp userId internally.
+      if (!tempUserId) {
+        throw new Error("User ID missing—please login again");
+      }
+
+      // Call verifyOTP with the stored OTP value.
       const response = await verifyOTP(otp);
-      console.log("OTP verified, userId:", response.userId);
-      if (!response.userId) {
-        throw new Error("User ID missing from OTP response!");
+      // Assume response returns an object with token and complete user info.
+      if (!response || !response.user) {
+        throw new Error("OTP verification failed—no user data returned");
       }
+      
+      // Save full user data in localStorage.
+      localStorage.setItem("user", JSON.stringify(response.user));
+      // Optionally, store the token as well.
+      // localStorage.setItem("authToken", response.token);
 
-      console.log("Fetching user data for:", response.userId);
-      const userDetailsResponse = await getUserById();
-      console.log("Fetched user details:", userDetailsResponse);
-      if (!userDetailsResponse || !userDetailsResponse.user || !userDetailsResponse.user.name) {
-        throw new Error("User details missing or invalid");
-      }
-
-      // Save the full user data in the AuthContext and navigate.
-      handleLoginSuccess(userDetailsResponse.user);
+      // Remove the temporary userId (now that full user data is available).
+      localStorage.removeItem("tempUserId");
+      
+      handleLoginSuccess(response.user);
       navigate("/dashboard");
     } catch (error) {
       console.error("Error during OTP verification:", error.message);
@@ -72,6 +81,7 @@ export default function Login() {
   };
 
   const handleOTPChange = (e) => {
+    // Remove any non-alphanumeric characters (if needed) and limit to 6 characters.
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
     if (value.length <= 6) {
       setOTP(value);
@@ -86,8 +96,8 @@ export default function Login() {
     <div className="w-full h-screen bg-white text-gray-900 flex flex-col lg:flex-row">
       <div className="flex-1 flex items-center justify-center">
         <div className="w-[350px] max-w-[90%] space-y-6">
-          <div className="flex justify-center"> {/* Center the logo */}
-            <Logo className="h-12 w-auto" /> {/* Adjust logo size as needed */}
+          <div className="flex justify-center">
+            <Logo className="h-12 w-auto" />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -131,11 +141,15 @@ export default function Login() {
                     required
                   />
                   <button type="button" onClick={togglePasswordVisibility} className="absolute right-2 top-2">
-                    {showPassword ? <EyeOffIcon className="text-gray-600" /> : <EyeIcon className="text-gray-600" />}
+                    {showPassword ? (
+                      <EyeOffIcon className="text-gray-600" />
+                    ) : (
+                      <EyeIcon className="text-gray-600" />
+                    )}
                   </button>
                 </div>
               </div>
-              <Button className="rounded-lg w-full" type="submit" disabled={loading}> {/* Full width button */}
+              <Button className="rounded-lg w-full" type="submit" disabled={loading}>
                 {loading ? <LoaderIcon className="animate-spin mr-2" /> : "Verify"}
               </Button>
             </form>
@@ -152,7 +166,7 @@ export default function Login() {
                   required
                 />
               </div>
-              <Button className="rounded-lg w-full" type="submit" disabled={loading}> {/* Full width button */}
+              <Button className="rounded-lg w-full" type="submit" disabled={loading}>
                 {loading ? <LoaderIcon className="animate-spin mr-2" /> : "Verify"}
               </Button>
             </form>
@@ -160,7 +174,11 @@ export default function Login() {
         </div>
       </div>
       <div className="hidden lg:block flex-1 h-screen">
-        <img src="src/assets/img3.jpg" alt="Decorative background" className="h-full w-full object-cover" />
+        <img
+          src="src/assets/img3.jpg"
+          alt="Decorative background"
+          className="h-full w-full object-cover"
+        />
       </div>
     </div>
   );

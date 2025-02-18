@@ -5,14 +5,23 @@ import { getUserById as fetchUserById } from "@/services/autheService";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Initialize from localStorage so the data persists between sessions.
+  // Safely load full user data from localStorage.
   const [user, setUser] = useState(() => {
-    return JSON.parse(localStorage.getItem("user")) || null;
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch (error) {
+        console.error("Error parsing stored user data:", error);
+        localStorage.removeItem("user");
+        return null;
+      }
+    }
+    return null;
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem("user");
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("user"));
 
+  // Save full user data in localStorage after successful login.
   const login = (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
@@ -23,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem("user");
-    localStorage.removeItem("userId");
+    localStorage.removeItem("tempUserId");
   };
 
   // A helper function for successful login (e.g. after OTP verification)
@@ -31,15 +40,11 @@ export const AuthProvider = ({ children }) => {
     login(userData);
   };
 
-  // On app load, if there is a stored user, use it.
-  // If only a userId exists, fetch the full user details from the backend.
+  // On app load, if there is a temp userId stored but no full user in localStorage, trigger fetching full user details.
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
-    } else if (localStorage.getItem("userId")) {
-      fetchUserById()
+    if (!localStorage.getItem("user") && localStorage.getItem("tempUserId")) {
+      const tempUserId = localStorage.getItem("tempUserId");
+      fetchUserById(tempUserId)
         .then((response) => {
           if (response && response.user) {
             login(response.user);
