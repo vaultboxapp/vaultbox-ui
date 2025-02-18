@@ -5,7 +5,7 @@ import { api, chatAPI } from "./api";  // ✅ Use api if backend is on localhost
 // Call login API and store temporary user ID for OTP verification.
 export const login = async (email, password) => {
   try {
-    const response = await api.post("/api/auth/login", { email, password }, { withCredentials: true });
+    const response = await api.post("/auth/login", { email, password }, { withCredentials: true });
     localStorage.setItem("tempUserId", response.data.userId);
     return response.data;
   } catch (error) {
@@ -19,7 +19,7 @@ export const verifyOTP = async (otp) => {
     const userId = localStorage.getItem("tempUserId");
     if (!userId) throw new Error("User ID missing from temporary storage");
 
-    const response = await api.post("/api/auth/verify-otp", { userId, otp }, { withCredentials: true });
+    const response = await api.post("/auth/verify-otp", { userId, otp }, { withCredentials: true });
     localStorage.setItem("userId", userId);
     localStorage.removeItem("tempUserId");
     return { ...response.data, userId };
@@ -34,7 +34,7 @@ export const getUserById = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) throw new Error("User ID not found");
 
-    const response = await api.get(`/api/auth/user/${userId}`, { withCredentials: true });
+    const response = await api.get(`/auth/user/${userId}`, { withCredentials: true });
     return response.data;
   } catch (error) {
     localStorage.removeItem("userId"); // Cleanup on error.
@@ -45,7 +45,7 @@ export const getUserById = async () => {
 // Call the logout API and clear all locally stored user data.
 export const logout = async () => {
   try {
-    const response = await api.post("/api/auth/logout", {}, { withCredentials: true });
+    const response = await api.post("/auth/logout", {}, { withCredentials: true });
     localStorage.removeItem("userId");
     localStorage.removeItem("user");
     return response.data;

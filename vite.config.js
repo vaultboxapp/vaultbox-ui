@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://vaultbox',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false, // use true if vaultbox has a valid SSL certificate
       },
@@ -27,6 +27,11 @@ export default defineConfig({
         secure: false,
         ws: true,
       },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
   },
 });
