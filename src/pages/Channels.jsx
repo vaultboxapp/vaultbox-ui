@@ -6,7 +6,6 @@ import ChatHeader from '../components/chat/ChatHeader';
 import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
 import ChannelInfo from '../components/chat/ChannelInfo';
-import ChatService from '../services/chatService';
 
 const Channels = () => {
   const {
@@ -14,19 +13,19 @@ const Channels = () => {
     currentChat: currentChannel,
     setCurrentChat: setCurrentChannel,
     messages,
-    loading,
     error,
     fetchMessages,
-    sendMessage,
+    uploadFile,
   } = useChat('channel');
 
-  const [showChannelInfo, setShowChannelInfo] = useState(false);
-
-  const handleWebSocketMessage = (data) => {
-    // Handle real-time updates here
+  const userId = 1; // Replace with your actual user ID retrieval
+  const handleIncomingMessage = (newMsg) => {
+    // Process the incoming message as needed (e.g., update local state)
+    console.log("New channel message:", newMsg);
   };
 
-  const { sendMessage: sendWebSocketMessage } = useWebSocket('wss://your-websocket-url', handleWebSocketMessage);
+  const { sendMessage: sendWebSocketMessage } = useWebSocket(userId, handleIncomingMessage);
+  const [showChannelInfo, setShowChannelInfo] = useState(false);
 
   const handleChannelSelect = (channel) => {
     setCurrentChannel(channel);
@@ -34,41 +33,26 @@ const Channels = () => {
     setShowChannelInfo(false);
   };
 
-  const handleSendMessage = async (content) => {
-    await sendMessage(content);
-    sendWebSocketMessage({ type: 'new_channel_message', channelId: currentChannel.id, content });
+  const handleSendMessage = (content) => {
+    if (!currentChannel) return;
+    // Use only WebSocket for sending text messages
+    sendWebSocketMessage({
+      type: "channel_message",
+      channelId: currentChannel.id,
+      sender: userId,
+      content,
+    });
   };
 
   const handleFileUpload = async (file) => {
     try {
-      const uploadedFile = await ChatService.uploadFile(currentChannel.id, file);
-      // Handle the uploaded file (e.g., add it to the messages)
-    } catch (error) {
-      console.error('Error uploading file:', error);
+      await uploadFile(file);
+    } catch (err) {
+      console.error("File upload error:", err);
     }
   };
 
-  const handleAddMember = async (userId) => {
-    try {
-      await ChatService.addChannelMember(currentChannel.id, userId);
-      // Update the channel members list
-    } catch (error) {
-      console.error('Error adding member:', error);
-    }
-  };
-
-  const handleRemoveMember = async (userId) => {
-    try {
-      await ChatService.removeChannelMember(currentChannel.id, userId);
-      // Update the channel members list
-    } catch (error) {
-      console.error('Error removing member:', error);
-    }
-  };
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="flex h-screen">
@@ -93,11 +77,7 @@ const Channels = () => {
               </div>
               {showChannelInfo && (
                 <div className="w-80 border-l">
-                  <ChannelInfo
-                    channel={currentChannel}
-                    onAddMember={handleAddMember}
-                    onRemoveMember={handleRemoveMember}
-                  />
+                  <ChannelInfo channel={currentChannel} />
                 </div>
               )}
             </div>

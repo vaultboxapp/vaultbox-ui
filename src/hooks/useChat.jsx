@@ -1,3 +1,4 @@
+// src/hooks/useChat.js
 import { useState, useEffect, useCallback } from 'react';
 import ChatService from '../services/chatService';
 
@@ -8,12 +9,14 @@ export const useChat = (chatType) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Fetch all channels or direct contacts
   const fetchChats = useCallback(async () => {
     setLoading(true);
     try {
-      const data = chatType === 'direct' 
-        ? await ChatService.getContacts()
-        : await ChatService.getChannels();
+      const data =
+        chatType === 'direct'
+          ? await ChatService.getContacts()
+          : await ChatService.getChannels();
       setChats(data);
     } catch (err) {
       setError(err.message);
@@ -22,31 +25,46 @@ export const useChat = (chatType) => {
     }
   }, [chatType]);
 
-  const fetchMessages = useCallback(async (chatId) => {
-    setLoading(true);
-    try {
-      const data = chatType === 'direct'
-        ? await ChatService.getDirectMessages(chatId)
-        : await ChatService.getChannelMessages(chatId);
-      setMessages(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [chatType]);
+  // Fetch messages for a particular channel or direct chat
+  const fetchMessages = useCallback(
+    async (chatId) => {
+      if (!chatId) return;
+      setLoading(true);
+      try {
+        const data =
+          chatType === 'direct'
+            ? await ChatService.getDirectMessages(chatId)
+            : await ChatService.getChannelMessages(chatId);
+        setMessages(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [chatType]
+  );
 
-  const sendMessage = useCallback(async (content) => {
-    if (!currentChat) return;
-    try {
-      const data = chatType === 'direct'
-        ? await ChatService.sendDirectMessage(currentChat.id, content)
-        : await ChatService.sendChannelMessage(currentChat.id, content);
-      setMessages(prevMessages => [...prevMessages, data]);
-    } catch (err) {
-      setError(err.message);
-    }
-  }, [currentChat, chatType]);
+  // Removed the old "sendMessage" that used HTTP
+  // We'll rely solely on WebSockets for sending text messages.
+
+  // Keep file upload (HTTP) for direct or channel
+  const uploadFile = useCallback(
+    async (file) => {
+      if (!currentChat) return;
+      try {
+        if (chatType === 'direct') {
+          await ChatService.uploadFileToDirect(currentChat.id, file);
+        } else {
+          await ChatService.uploadFileToChannel(currentChat.id, file);
+        }
+        // Optionally re-fetch messages or push to local state
+      } catch (err) {
+        setError(err.message);
+      }
+    },
+    [currentChat, chatType]
+  );
 
   useEffect(() => {
     fetchChats();
@@ -60,6 +78,6 @@ export const useChat = (chatType) => {
     loading,
     error,
     fetchMessages,
-    sendMessage,
+    uploadFile, // no direct "sendMessage" here
   };
 };

@@ -6,7 +6,6 @@ import ChatHeader from '../components/chat/ChatHeader';
 import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
 import UserProfile from '../components/chat/UserProfile';
-import ChatService from '../services/chatService';
 
 const Messages = () => {
   const {
@@ -14,19 +13,23 @@ const Messages = () => {
     currentChat,
     setCurrentChat,
     messages,
-    loading,
     error,
     fetchMessages,
-    sendMessage,
+    uploadFile,
   } = useChat('direct');
 
-  const [showProfile, setShowProfile] = useState(false);
+  const userId = 2; // or fetch from localStorage, etc.
 
-  const handleWebSocketMessage = (data) => {
-    // Handle real-time updates here
+  // Handler for incoming messages (via WebSocket)
+  const handleIncomingMessage = (newMsg) => {
+    // Possibly filter if newMsg.sender === currentChat.id or newMsg.receiverId === userId
+    console.log("New direct message:", newMsg);
   };
 
-  const { sendMessage: sendWebSocketMessage } = useWebSocket('wss://your-websocket-url', handleWebSocketMessage);
+  // WebSocket for real-time
+  const { sendMessage: sendWebSocketMessage } = useWebSocket(userId, handleIncomingMessage);
+
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleChatSelect = (chat) => {
     setCurrentChat(chat);
@@ -34,23 +37,26 @@ const Messages = () => {
     setShowProfile(false);
   };
 
-  const handleSendMessage = async (content) => {
-    await sendMessage(content);
-    sendWebSocketMessage({ type: 'new_message', chatId: currentChat.id, content });
+  const handleSendMessage = (content) => {
+    if (!currentChat) return;
+    // Only WebSocket for sending text
+    sendWebSocketMessage({
+      type: "direct_message",
+      sender: userId,
+      receiver: currentChat.id,
+      content,
+    });
   };
 
   const handleFileUpload = async (file) => {
     try {
-      const uploadedFile = await ChatService.uploadFile(currentChat.id, file);
-      // Handle the uploaded file (e.g., add it to the messages)
-    } catch (error) {
-      console.error('Error uploading file:', error);
+      await uploadFile(file); // HTTP route for file upload
+    } catch (err) {
+      console.error("File upload error:", err);
     }
   };
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="flex h-screen">
@@ -71,7 +77,10 @@ const Messages = () => {
             <div className="flex-1 flex">
               <div className="flex-1 flex flex-col">
                 <MessageList messages={messages} />
-                <MessageInput onSendMessage={handleSendMessage} onFileUpload={handleFileUpload} />
+                <MessageInput
+                  onSendMessage={handleSendMessage}
+                  onFileUpload={handleFileUpload}
+                />
               </div>
               {showProfile && (
                 <div className="w-80 border-l">
