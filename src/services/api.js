@@ -1,9 +1,20 @@
 // src/services/api.js
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "http://localhost:5000", // Your backend server URL
-  withCredentials: true, // Include cookies if needed
+export const api = axios.create({
+  baseURL: "http://localhost:5000", 
+  withCredentials: true,
 });
 
-export default api;
+export const chatAPI = axios.create({
+  baseURL: "https://vaultbox",
+  withCredentials: true,
+});
+
+chatAPI.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
