@@ -13,51 +13,52 @@ const Messages = () => {
     currentChat,
     setCurrentChat,
     messages,
+    setMessages,
     error,
     fetchMessages,
     uploadFile,
   } = useChat('direct');
 
-  const userId = 2; // or fetch from localStorage, etc.
-
-  // Handler for incoming messages (via WebSocket)
+  const userId = "1"; // Ensure type matches your API
   const handleIncomingMessage = (newMsg) => {
-    // Possibly filter if newMsg.sender === currentChat.id or newMsg.receiverId === userId
     console.log("New direct message:", newMsg);
+    setMessages(prev => [...prev, newMsg]);
   };
 
-  // WebSocket for real-time
   const { sendMessage: sendWebSocketMessage } = useWebSocket(userId, handleIncomingMessage);
-
   const [showProfile, setShowProfile] = useState(false);
 
   const handleChatSelect = (chat) => {
     setCurrentChat(chat);
-    fetchMessages(chat.id);
+    // Clear previous messages when switching chats
+    setMessages([]);
+    fetchMessages(chat._id);
     setShowProfile(false);
   };
 
   const handleSendMessage = (content) => {
     if (!currentChat) return;
-    // Only WebSocket for sending text
-    sendWebSocketMessage({
+    const messagePayload = {
       type: "direct_message",
-      sender: userId,
-      receiver: currentChat.id,
-      content,
-    });
+      senderId: userId,
+      receiverId: currentChat._id,
+      content, // Use "content" to be consistent
+      createdAt: new Date().toISOString(),
+    };
+    sendWebSocketMessage(messagePayload);
+    setMessages(prev => [...prev, messagePayload]);
   };
 
   const handleFileUpload = async (file) => {
     try {
-      await uploadFile(file); // HTTP route for file upload
+      await uploadFile(file);
     } catch (err) {
       console.error("File upload error:", err);
     }
   };
 
   if (error) return <div>Error: {error}</div>;
-
+  
   return (
     <div className="flex h-screen">
       <ChatList

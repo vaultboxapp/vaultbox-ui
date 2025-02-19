@@ -10,17 +10,17 @@ const ChatHeader = ({ chat, chatType, onInfoClick }) => {
         {chatType === 'direct' ? (
           <Avatar>
             <AvatarImage src={chat.avatar} />
-            <AvatarFallback>{chat.name[0]}</AvatarFallback>
+            <AvatarFallback>{chat.username?.[0] || "?"}</AvatarFallback>
           </Avatar>
         ) : (
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-            #{chat.name[0]}
+            #{chat.name?.[0] || "?"}
           </div>
         )}
         <div>
-          <h2 className="text-lg font-semibold">{chat.name}</h2>
+          <h2 className="text-lg font-semibold">{chat.name || chat.username}</h2>
           {chatType === 'direct' && (
-            <p className="text-sm text-muted-foreground">{chat.status}</p>
+            <p className="text-sm text-muted-foreground">{chat.status || "Online"}</p>
           )}
         </div>
       </div>

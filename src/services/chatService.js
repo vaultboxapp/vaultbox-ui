@@ -1,91 +1,36 @@
-// src/services/ChatService.js
-import { chatAPI } from "./api";
+import axios from 'axios';
+
+const API = axios.create({
+  baseURL: '/', // Now API calls are sent to /api/...
+});
 
 const ChatService = {
-  // -- DIRECT (PRIVATE) MESSAGES --
-
-  // 1) GET /messages => getContacts
-  getContacts: async () => {
-    // FIX: changed from "/messages/getCotacts" to "/messages"
-    const response = await chatAPI.get("/messages", { withCredentials: true });
-    return response.data;
-  },
-
-  // 2) GET /messages/getchat/:receiverId => getDirectMessages
-  getDirectMessages: async (receiverId, page = 1, limit = 20) => {
-    const response = await chatAPI.get(
-      `/messages/getchat/${receiverId}?page=${page}&limit=${limit}`,
-      { withCredentials: true }
-    );
-    return response.data;
-  },
-
-  // 3) POST /messages/upload => uploadFileToDirect
-  uploadFileToDirect: async (receiverId, file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("receiverId", receiverId);
-
-    const response = await chatAPI.post("/messages/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Accept: "application/json",
-      },
-      withCredentials: true,
-    });
-    return response.data;
-  },
-
-  // -- CHANNEL (GROUP) MESSAGES --
-
-  // 4) GET /channels => getChannels
   getChannels: async () => {
-    const response = await chatAPI.get("/channels", { withCredentials: true });
+    const response = await API.get('/channels');
     return response.data;
   },
-
-  // 5) GET /channels/getChat/:channelId => getChannelMessages
-  getChannelMessages: async (channelId, page = 1, limit = 10) => {
-    const response = await chatAPI.get(
-      `/channels/getChat/${channelId}?page=${page}&limit=${limit}`,
-      { withCredentials: true }
-    );
+  getContacts: async () => {
+    const response = await API.get('/messages'); // assuming /contacts for direct chats
     return response.data;
   },
-
-  // 6) POST /channels/upload => uploadFileToChannel
-  uploadFileToChannel: async (channelId, file) => {
+  getDirectMessages: async (chatId) => {
+    const response = await API.get(`/messages/getchat/${chatId}?page=1&limit=20`);
+    return response.data;
+  },
+  getChannelMessages: async (chnlId) => {
+    const response = await API.get(`/channels/getChat/${chnlId}?page=1&limit=20`);
+    return response.data;
+  },
+  uploadFileToDirect: async (chatId, file) => {
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("channelId", channelId);
-
-    const response = await chatAPI.post("/channels/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Accept: "application/json",
-      },
-      withCredentials: true,
-    });
+    formData.append('file', file);
+    const response = await API.post(`/upload/direct/${chatId}`, formData);
     return response.data;
   },
-
-  // 7) POST /channels/addMember => addChannelMember
-  addChannelMember: async (channelId, userId) => {
-    const response = await chatAPI.post(
-      "/channels/addMember",
-      { channelId, userId },
-      { withCredentials: true }
-    );
-    return response.data;
-  },
-
-  // 8) POST /channels/removeMember => removeChannelMember
-  removeChannelMember: async (channelId, userId) => {
-    const response = await chatAPI.post(
-      "/channels/removeMember",
-      { channelId, userId },
-      { withCredentials: true }
-    );
+  uploadFileToChannel: async (chnl, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await API.post(`/upload/channel/${chnl}`, formData);
     return response.data;
   },
 };

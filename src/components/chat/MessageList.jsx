@@ -1,38 +1,43 @@
-import React, { useRef, useEffect } from 'react';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React, { useEffect, useRef } from "react";
 
-const MessageList = ({ messages }) => {
-  const scrollRef = useRef(null);
+const MessageList = ({ messages = [], userId }) => {
+  const endRef = useRef(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
+  if (!Array.isArray(messages)) {
+    console.error("MessageList expects an array for messages but got:", messages);
+    return null;
+  }
+
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-      <div className="space-y-4">
-        {messages.map((message) => (
-          <div key={message.id} className="flex items-start space-x-3">
-            <Avatar>
-              <AvatarImage src={message.sender.avatar} />
-              <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold">{message.sender.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
-              <p className="mt-1 text-sm">{message.content}</p>
+    <div className="flex flex-col space-y-2 p-4 overflow-y-auto h-full bg-gray-100">
+      {messages.length > 0 ? (
+        messages.map((msg, index) => {
+          const isMe = msg.senderId === userId;
+          return (
+            <div
+              key={index}
+              className={`p-3 rounded-xl max-w-[75%] ${
+                isMe ? "bg-blue-500 text-white self-end" : "bg-gray-300 text-black self-start"
+              }`}
+            >
+              <p className="text-sm">{msg.content}</p>
+              <span className="text-xs opacity-70 block text-right">
+                {new Date(msg.createdAt).toLocaleTimeString()}
+              </span>
             </div>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
+          );
+        })
+      ) : (
+        <p className="text-center text-gray-500">No messages</p>
+      )}
+      <div ref={endRef} />
+    </div>
   );
 };
 

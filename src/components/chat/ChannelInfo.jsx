@@ -20,19 +20,17 @@ const ChannelInfo = ({ channel, onAddMember, onRemoveMember }) => {
       <h3 className="text-lg font-semibold mb-2">Members</h3>
       <ScrollArea className="flex-1 mb-4">
         {channel.members.map((member) => (
-          <div key={member.id} className="flex items-center justify-between py-2">
+          <div key={member._id} className="flex items-center justify-between py-2">
             <div className="flex items-center space-x-2">
               <Avatar>
                 <AvatarImage src={member.avatar} />
-                <AvatarFallback>{member.name[0]}</AvatarFallback>
+                <AvatarFallback>{member.username?.[0] || "?"}</AvatarFallback>
               </Avatar>
-              <span>{member.name}</span>
+              <span>{member.username}</span>
             </div>
-            {member.role !== 'admin' && (
-              <Button variant="ghost" size="sm" onClick={() => onRemoveMember(member.id)}>
-                Remove
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" onClick={() => onRemoveMember(member._id)}>
+              Remove
+            </Button>
           </div>
         ))}
       </ScrollArea>

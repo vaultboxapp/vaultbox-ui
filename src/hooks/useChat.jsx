@@ -1,4 +1,3 @@
-// src/hooks/useChat.js
 import { useState, useEffect, useCallback } from 'react';
 import ChatService from '../services/chatService';
 
@@ -9,75 +8,127 @@ export const useChat = (chatType) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all channels or direct contacts
   const fetchChats = useCallback(async () => {
     setLoading(true);
     try {
-      const data =
-        chatType === 'direct'
-          ? await ChatService.getContacts()
-          : await ChatService.getChannels();
-      setChats(data);
+      let response;
+      if (chatType === "direct") {
+        response = await ChatService.getContacts();
+        if (response.success && Array.isArray(response.data)) {
+          console.log("Contacts received:", response.data); // Crucial log
+          setChats(response.data);
+        } else {
+          setChats([]);
+        }
+      } else {
+        response = await ChatService.getChannels();
+        if (response.success && response.msg && Array.isArray(response.msg.channels)) {
+          setChats(response.msg.channels);
+        } else {
+          setChats([]);
+        }
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || "Error fetching chats");
     } finally {
       setLoading(false);
     }
   }, [chatType]);
 
-  // Fetch messages for a particular channel or direct chat
-  const fetchMessages = useCallback(
-    async (chatId) => {
-      if (!chatId) return;
-      setLoading(true);
-      try {
-        const data =
-          chatType === 'direct'
-            ? await ChatService.getDirectMessages(chatId)
-            : await ChatService.getChannelMessages(chatId);
-        setMessages(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [chatType]
-  );
+  const fetchMessages = useCallback(async (chat) => {
+    if (!chat || !chat._id) {
+      console.error("fetchMessages: Chat object or ID is missing", chat);
+      return;
+    }
 
-  // Removed the old "sendMessage" that used HTTP
-  // We'll rely solely on WebSockets for sending text messages.
-
-  // Keep file upload (HTTP) for direct or channel
-  const uploadFile = useCallback(
-    async (file) => {
-      if (!currentChat) return;
-      try {
-        if (chatType === 'direct') {
-          await ChatService.uploadFileToDirect(currentChat.id, file);
-        } else {
-          await ChatService.uploadFileToChannel(currentChat.id, file);
+    setLoading(true);
+    try {
+      let data;
+      if (chatType === "direct") {
+        const receiverId = Number(chat._id); // Convert to number
+        if (isNaN(receiverId)) {
+          console.error("Invalid receiverId (NaN):", chat._id);
+          setError("Invalid chat ID");
+          return;
         }
-        // Optionally re-fetch messages or push to local state
-      } catch (err) {
-        setError(err.message);
+
+        console.log("Fetching direct messages for receiverId:", receiverId);
+        data = await ChatService.getDirectMessages(receiverId);
+
+        if (!data || !data.success || !data.msg || !Array.isArray(data.msg.messages)) {
+          console.error("Invalid data received:", data);
+          setMessages([]);
+          return;
+        }
+
+      } else {
+        data = await ChatService.getChannelMessages(chat._id);
       }
-    },
-    [currentChat, chatType]
-  );
+
+      setMessages((prevMessages) => {
+        const messageIds = new Set(prevMessages.map((msg) => msg._id));
+        const uniqueNewMessages = data.msg.messages.filter((msg) => !messageIds.has(msg._id));
+        return [...prevMessages, ...uniqueNewMessages];
+      });
+
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+      setError(err?.message || "Error fetching messages");
+    } finally {
+      setLoading(false);
+    }
+  }, [chatType]);
+
+  const handleChatSelect = (chat) => {
+    if (!chat || !chat._id) {
+      console.error("handleChatSelect: Chat is invalid", chat);
+      return;
+    }
+
+    if (chat._id === currentChat?._id) return;
+
+    if (!chats.find(c => c._id === chat._id)) {
+      console.warn("Selected chat not yet available. Waiting...");
+      setCurrentChat(chat); // Optimistic update
+      setMessages([]);
+      fetchMessages(chat);
+      return; // Important: Exit to prevent errors
+    }
+
+    setCurrentChat(chat);
+    setMessages([]);
+    fetchMessages(chat);
+  };
 
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
 
+  useEffect(() => {
+    console.log("Chats state updated:", chats); // Crucial log
+  }, [chats]);
+
+
   return {
     chats,
     currentChat,
-    setCurrentChat,
+    setCurrentChat: handleChatSelect,
     messages,
+    setMessages,
     loading,
     error,
     fetchMessages,
-    uploadFile, // no direct "sendMessage" here
+    uploadFile: useCallback(async (file) => { // Added useCallback
+      if (!currentChat) return;
+      try {
+        if (chatType === "direct") {
+          await ChatService.uploadFileToDirect(currentChat._id, file);
+        } else {
+          await ChatService.uploadFileToChannel(currentChat._id, file);
+        }
+      } catch (err) {
+        setError(err?.message || "File upload failed");
+      }
+    }, [currentChat, chatType]),
   };
 };
