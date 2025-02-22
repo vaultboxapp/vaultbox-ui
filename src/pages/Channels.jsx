@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useWebSocket } from '../hooks/useWebSocket';
 import ChatList from '../components/chat/ChatList';
@@ -19,25 +19,24 @@ const Channels = () => {
     uploadFile,
   } = useChat('channel');
 
-  const userId = "1";
+  const userId = "1"; // Adjust as needed
   const [showChannelInfo, setShowChannelInfo] = useState(false);
 
-  // Callback for handling group messages
-  const handleGrpMessage = (newMsg) => {
+  // Memoize group message handler so it doesn't trigger unnecessary re-renders.
+  const handleGrpMessage = useCallback((newMsg) => {
     console.log("New group message received:", newMsg);
-    // Append only if the message belongs to the currently selected channel
     if (currentChat && newMsg.channelId === currentChat._id) {
       setMessages(prev => [...prev, newMsg]);
     }
-  };
+  }, [currentChat]);
 
-  // Initialize WebSocket with the group message callback
+  // Use our WebSocket hook with the stable group message callback.
   const { sendMessage } = useWebSocket(userId, handleGrpMessage);
 
   const handleChannelSelect = (channel) => {
     console.log("Channel selected:", channel);
     setCurrentChat(channel);
-    setMessages([]); // Clear messages when switching channels
+    setMessages([]); // Clear previous messages on switching channels
     fetchMessages(channel);
     setShowChannelInfo(false);
   };
@@ -48,7 +47,7 @@ const Channels = () => {
       type: "channel_message",
       channelId: currentChat._id,
       senderId: userId,
-      content, // Ensure this matches your API structure
+      content,
       createdAt: new Date().toISOString(),
     };
     sendMessage(messagePayload);

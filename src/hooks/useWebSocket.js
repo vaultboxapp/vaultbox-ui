@@ -9,18 +9,20 @@ export const useWebSocket = (userId, onGrpMessage) => {
   const connect = useCallback(() => {
     if (ws.current?.connected) return;
 
-    // Cleanup any existing connection
     if (ws.current) {
       ws.current.removeAllListeners();
       ws.current.disconnect();
     }
 
-    ws.current = io("http://localhost:3000", {
+    // Use relative URL so Vite's proxy forwards the connection
+    ws.current = io("/", {
       path: "/chat/socket.io",
       transports: ["websocket"],
       query: { userId: stableUserId.current },
       withCredentials: true,
+      extraHeaders: { Cookie: document.cookie },
       autoConnect: true,
+      reconnection: true,
     });
 
     ws.current.on("connect", () => {
@@ -28,22 +30,19 @@ export const useWebSocket = (userId, onGrpMessage) => {
       ws.current.emit("authenticate", { userId: stableUserId.current });
     });
 
-    // Listen for group messages from the backend
     ws.current.on("grpMessage", (newMsg) => {
       console.log("Received grpMessage:", newMsg);
       if (onGrpMessage) onGrpMessage(newMsg);
     });
 
-    ws.current.on("connect_error", (error) => {
-      console.error("Socket connection error:", error.message);
-      if (isMounted.current) setTimeout(connect, 5000);
+    ws.current.on("disconnect", (reason) => {
+      console.warn("WebSocket disconnected:", reason);
     });
 
-    return () => {
-      ws.current?.off("connect");
-      ws.current?.off("grpMessage");
-      ws.current?.off("connect_error");
-    };
+    ws.current.on("connect_error", (error) => {
+      console.error("Socket connection error:", error.message);
+      // Let socket.io handle reconnection automatically.
+    });
   }, [onGrpMessage]);
 
   useEffect(() => {
@@ -59,14 +58,12 @@ export const useWebSocket = (userId, onGrpMessage) => {
     };
   }, [connect]);
 
-  // Send group message using event "grpMessage"
   const sendMessage = useCallback((payload) => {
     if (ws.current?.connected) {
       console.log("Sending grpMessage:", payload);
       ws.current.emit("grpMessage", payload);
     } else {
-      console.warn("WebSocket not connected, retrying...");
-      setTimeout(() => sendMessage(payload), 1000);
+      console.warn("WebSocket not connected; message not sent");
     }
   }, []);
 
