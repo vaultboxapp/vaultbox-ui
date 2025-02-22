@@ -1,6 +1,6 @@
 import React from "react"
 import { Outlet, useLocation } from "react-router-dom"
-import { AppSidebar } from "@/sidebar/AppSidebar"
+import { AppSidebar } from "@/components/sidebar/AppSidebar"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   Breadcrumb,

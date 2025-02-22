@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "@/components/Theme/ThemeProvider"
-import { useAuth } from "@/context/auth"
+import { useAuth } from "@/features/login/context/auth"
 
 const APP_VERSION = "1.0.0"
 
