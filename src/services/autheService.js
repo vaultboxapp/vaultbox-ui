@@ -1,11 +1,13 @@
-// frontend -> services/authService.js
-import { api, chatAPI } from "./api";  // ✅ Use api if backend is on localhost:5000
-// import { chatAPI } from "./api";  // Use this if auth runs on https://vaultbox
+import { api, chatAPI } from "./api"; // Use `api` if your backend is on localhost:5000
 
 // Call login API and store temporary user ID for OTP verification.
 export const login = async (email, password) => {
   try {
-    const response = await api.post("/auth/login", { email, password }, { withCredentials: true });
+    const response = await api.post(
+      "/auth/login",
+      { email, password },
+      { withCredentials: true }
+    );
     localStorage.setItem("tempUserId", response.data.userId);
     return response.data;
   } catch (error) {
@@ -19,7 +21,11 @@ export const verifyOTP = async (otp) => {
     const userId = localStorage.getItem("tempUserId");
     if (!userId) throw new Error("User ID missing from temporary storage");
 
-    const response = await api.post("/auth/verify-otp", { userId, otp }, { withCredentials: true });
+    const response = await api.post(
+      "/auth/verify-otp",
+      { userId, otp },
+      { withCredentials: true }
+    );
     localStorage.setItem("userId", userId);
     localStorage.removeItem("tempUserId");
     return { ...response.data, userId };
