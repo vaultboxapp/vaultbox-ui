@@ -1,48 +1,54 @@
-import React from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 
 const ChatList = ({ chats = [], currentChat, onChatSelect, chatType }) => {
   if (!Array.isArray(chats)) {
-    console.error("ChatList expects an array for chats but got:", chats);
-    return null;
+    console.error("ChatList expects an array for chats but got:", chats)
+    return null
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-4rem)] w-64 border-r">
-      <div className="p-4 space-y-4">
-        {chats.length > 0 ? (
-          chats.map((chat, index) => (
-            <button
-              key={chat._id || index}
-              className={`flex items-center space-x-3 w-full p-2 rounded-lg transition ${
-                currentChat?._id === chat._id
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => onChatSelect(chat)}
-            >
+    <div className="p-4 space-y-2">
+      {chats.length > 0 ? (
+        chats.map((chat) => (
+          <button
+            key={chat._id}
+            className={`flex items-center justify-between w-full p-3 rounded-lg transition-colors ${
+              currentChat?._id === chat._id ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+            }`}
+            onClick={() => onChatSelect(chat)}
+          >
+            <div className="flex items-center space-x-3">
               {chatType === "direct" ? (
                 <Avatar>
                   <AvatarImage src={chat.avatar} />
                   <AvatarFallback>{chat.username?.[0] || "?"}</AvatarFallback>
                 </Avatar>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   #{chat.name?.[0] || "?"}
                 </div>
               )}
-              <span className="text-sm font-medium">
-                {chat.name || chat.username || "Unnamed Chat"}
-              </span>
-            </button>
-          ))
-        ) : (
-          <p className="text-center text-gray-500">No chats available</p>
-        )}
-      </div>
-    </ScrollArea>
-  );
-};
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-medium">{chat.name || chat.username}</span>
+                {chat.lastMessage && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[150px]">{chat.lastMessage}</span>
+                )}
+              </div>
+            </div>
+            {chat.unreadCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {chat.unreadCount}
+              </Badge>
+            )}
+          </button>
+        ))
+      ) : (
+        <p className="text-center text-muted-foreground p-4">No chats available</p>
+      )}
+    </div>
+  )
+}
 
-export default ChatList;
+export default ChatList
+
