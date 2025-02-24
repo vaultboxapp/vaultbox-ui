@@ -1,7 +1,5 @@
-import kyber from 'crystals-kyber-js';
+import * as kyber from 'crystals-kyber-js';  // Fix import issue
 
-// Initialize Kyber
-await kyber.init();
 
 // Generate Kyber-768 Key Pair
 function generateKyber768KeyPair() {
