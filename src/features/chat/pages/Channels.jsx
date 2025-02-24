@@ -1,12 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { useChat } from '../hooks/useChat';
-import { useWebSocket } from '../hooks/useWebSocket';
-import ChatList from '../components/ChatList';
-import ChatHeader from '../components/ChatHeader';
-import MessageList from '../components/MessageList';
-import MessageInput from '../components/MessageInput';
-import ChannelInfo from '../components/ChannelInfo';
-import { useAuth } from '@login/context/auth';
+"use client"
+
+import { useCallback, useEffect } from "react"
+import { useChat } from "../hooks/useChat"
+import { useWebSocket } from "../hooks/useWebSocket"
+import ChatLayout from "../components/ChatLayout"
+import { useAuth } from "@login/context/auth"
 
 const Channels = () => {
   const {
@@ -18,94 +16,69 @@ const Channels = () => {
     error,
     fetchMessages,
     uploadFile,
-  } = useChat('channel');
+  } = useChat("channel")
 
-  const user = useAuth;
-  const userId = user?.id;
+  const { user } = useAuth()
+  const userId = user?.id
 
-  const [showChannelInfo, setShowChannelInfo] = useState(false);
+  // Debug logs
+ // console.log("Current user:", user)
+ // console.log("Current userId:", userId)
 
-  // Memoize group message handler so it doesn't trigger unnecessary re-renders.
-  const handleGrpMessage = useCallback((newMsg) => {
-    console.log("New group message received:", newMsg);
-    if (currentChat && newMsg.channelId === currentChat._id) {
-      setMessages(prev => [...prev, newMsg]);
-    }
-  }, [currentChat]);
+  // Wait for user to be loaded
+  if (!user || !userId) {
+    return <div>Loading user data...</div>
+  }
 
-  // Use our WebSocket hook with the stable group message callback.
-  const { sendMessage } = useWebSocket(userId, handleGrpMessage);
+  const handleGrpMessage = useCallback(
+    (newMsg) => {
+      console.log("New group message received:", newMsg)
+      if (currentChat && newMsg.channelId === currentChat._id) {
+        setMessages((prev) => [...prev, newMsg])
+      }
+    },
+    [currentChat, setMessages]
+  )
 
-  const handleChannelSelect = (channel) => {
-    console.log("Channel selected:", channel);
-    setCurrentChat(channel);
-    setMessages([]); // Clear previous messages on switching channels
-    fetchMessages(channel);
-    setShowChannelInfo(false);
-  };
+  const { sendMessage } = useWebSocket(userId, handleGrpMessage)
 
   const handleSendMessage = (content) => {
-    if (!currentChat) return;
+    if (!currentChat) return
     const messagePayload = {
       type: "channel_message",
       channelId: currentChat._id,
       senderId: userId,
       content,
       createdAt: new Date().toISOString(),
-    };
-    sendMessage(messagePayload);
-    setMessages(prev => [...prev, messagePayload]);
-  };
-
-  const handleFileUpload = async (file) => {
-    try {
-      await uploadFile(file);
-    } catch (err) {
-      console.error("File upload error:", err);
     }
-  };
+    sendMessage(messagePayload)
+    setMessages((prev) => [...prev, messagePayload])
+  }
 
-  if (error) return <div>Error: {error}</div>;
+  // Fetch messages when currentChat changes
+  useEffect(() => {
+    if (currentChat) {
+      setMessages([])
+      fetchMessages(currentChat)
+    }
+  }, [currentChat, fetchMessages, setMessages])
+
+  if (error) return <div>Error: {error}</div>
 
   return (
-    <div className="flex h-screen">
-      <ChatList
-        chats={channels}
-        currentChat={currentChat}
-        onChatSelect={handleChannelSelect}
-        chatType="channel"
-      />
-      <div className="flex-1 flex flex-col">
-        {currentChat ? (
-          <>
-            <ChatHeader
-              chat={currentChat}
-              chatType="channel"
-              onInfoClick={() => setShowChannelInfo(!showChannelInfo)}
-            />
-            <div className="flex-1 flex">
-              <div className="flex-1 flex flex-col">
-                <MessageList messages={messages} />
-                <MessageInput 
-                  onSendMessage={handleSendMessage} 
-                  onFileUpload={handleFileUpload} 
-                />
-              </div>
-              {showChannelInfo && (
-                <div className="w-80 border-l">
-                  <ChannelInfo channel={currentChat} />
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <p>Select a channel to start chatting</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+    <ChatLayout
+      chatType="channel"
+      chats={channels}
+      currentChat={currentChat}
+      setCurrentChat={(channel) => {
+        setCurrentChat(channel)
+      }}
+      messages={messages}
+      onSendMessage={handleSendMessage}
+      onFileUpload={uploadFile}
+      userId={userId}
+    />
+  )
+}
 
-export default Channels;
+export default Channels
