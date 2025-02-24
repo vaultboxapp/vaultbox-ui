@@ -9,11 +9,14 @@ const MessageList = ({ messages = [], userId }) => {
   const scrollRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Scroll to bottom on initial load and when messages change
+  // Scroll to bottom on initial load and whenever messages change.
   useEffect(() => {
+    // Option 1: Scroll container directly
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
+    // Option 2 (preferred): Scroll dummy element into view with smooth behavior
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const formatMessageTime = (date) => {
@@ -22,9 +25,11 @@ const MessageList = ({ messages = [], userId }) => {
 
   const renderDateDivider = (date) => {
     return (
-      <div className="flex items-center my-4">
+      <div className="flex items-center my-4" key={date}>
         <div className="flex-1 border-t"></div>
-        <span className="mx-4 text-xs text-muted-foreground">{format(new Date(date), "MMMM d, yyyy")}</span>
+        <span className="mx-4 text-xs text-muted-foreground">
+          {format(new Date(date), "MMMM d, yyyy")}
+        </span>
         <div className="flex-1 border-t"></div>
       </div>
     );
@@ -44,21 +49,33 @@ const MessageList = ({ messages = [], userId }) => {
             <React.Fragment key={message._id || index}>
               {showDateDivider && renderDateDivider(message.createdAt)}
               <div
-                className={`flex gap-3 max-w-[85%] ${isCurrentUser ? "ml-auto flex-row-reverse" : "mr-auto flex-row"}`}
+                className={`flex gap-3 max-w-[85%] ${
+                  isCurrentUser
+                    ? "ml-auto flex-row-reverse"
+                    : "mr-auto flex-row"
+                }`}
               >
                 {!isCurrentUser && (
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={message.senderAvatar} />
-                    <AvatarFallback>{message.senderName?.[0] || "?"}</AvatarFallback>
+                    <AvatarFallback>
+                      {message.senderName?.[0] || "?"}
+                    </AvatarFallback>
                   </Avatar>
                 )}
-                <div className={`group flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
+                <div
+                  className={`group flex flex-col ${
+                    isCurrentUser ? "items-end" : "items-start"
+                  }`}
+                >
                   <span className="text-sm text-muted-foreground mb-1">
                     {isCurrentUser ? "You" : message.senderName || "Unknown"}
                   </span>
                   <div
                     className={`rounded-lg px-3 py-2 text-sm ${
-                      isCurrentUser ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                      isCurrentUser
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground"
                     }`}
                   >
                     {message.content}
@@ -71,6 +88,7 @@ const MessageList = ({ messages = [], userId }) => {
             </React.Fragment>
           );
         })}
+        {/* Dummy element for auto-scrolling */}
         <div ref={scrollRef} />
       </div>
     </ScrollArea>
