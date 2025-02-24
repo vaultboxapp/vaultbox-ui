@@ -1,3 +1,5 @@
+"use client"
+
 import { useChat } from "../hooks/useChat"
 import { useWebSocket } from "../hooks/useWebSocket"
 import ChatLayout from "../components/ChatLayout"
@@ -7,8 +9,16 @@ const Messages = () => {
   const { chats, currentChat, setCurrentChat, messages, setMessages, error, fetchMessages, uploadFile } =
     useChat("direct")
 
-  const user = useAuth()
+  const { user } = useAuth()
   const userId = user?.id
+
+  // console.log("Current user:", user)
+  // console.log("Current userId:", userId)
+
+  // Wait for user to be loaded
+  if (!user || !userId) {
+    return <div>Loading user data...</div>
+  }
 
   const handleIncomingMessage = (newMsg) => {
     console.log("New direct message:", newMsg)
@@ -51,4 +61,3 @@ const Messages = () => {
 }
 
 export default Messages
-

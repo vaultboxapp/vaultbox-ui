@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 
 const AuthContext = createContext()
 
@@ -9,9 +9,11 @@ export function AuthProvider({ children }) {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
       try {
-        return JSON.parse(storedUser)
+        const parsedUser = JSON.parse(storedUser)
+       // console.log("Loaded user from localStorage:", parsedUser)
+        return parsedUser
       } catch (error) {
-        console.error("Error parsing stored user data:", error)
+        //console.error("Error parsing stored user data:", error)
         localStorage.removeItem("user")
         return null
       }
@@ -19,12 +21,17 @@ export function AuthProvider({ children }) {
     return null
   })
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("user"))
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("user"))
 
   const login = useCallback((userData) => {
+    if (!userData?.id) {
+      console.error("userData missing id:", userData)
+      return
+    }
     setUser(userData)
     setIsAuthenticated(true)
     localStorage.setItem("user", JSON.stringify(userData))
+   // console.log("User logged in and stored:", userData)
   }, [])
 
   const logout = useCallback(() => {
@@ -38,9 +45,18 @@ export function AuthProvider({ children }) {
     login(userData)
   }
 
-  // Removed the useEffect that calls getUserById with tempUserId.
-  // Now, once OTP verification is complete, verifyOTP returns the full user data,
-  // and handleLoginSuccess is called to update state.
+  // Sync user state with localStorage changes (optional, for robustness)
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    if (storedUser && !user) {
+      try {
+        setUser(JSON.parse(storedUser))
+        setIsAuthenticated(true)
+      } catch (error) {
+        console.error("Failed to sync user from localStorage:", error)
+      }
+    }
+  }, [user])
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, login, logout, handleLoginSuccess }}>
