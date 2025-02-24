@@ -7,6 +7,9 @@ import { OTPVerification } from "@/features/login/component/otp-verification"
 import { MatrixBackground } from "@/features/login/component/matrix-background"
 import { useAuth } from "@/features/login/context/auth"
 import { login, verifyOTP } from "@/services/autheService"
+import { generateKyber768KeyPair } from '@/utils/kyberUtils';
+import { storePrivateKey } from '@/utils/indexedDBUtils';
+
 
 export default function LoginPage() {
   const { handleLoginSuccess } = useAuth()
@@ -50,6 +53,25 @@ export default function LoginPage() {
 
       handleLoginSuccess(response.user)
       navigate("/dashboard")
+
+      // 🔹 After navigating, generate and store keys
+      setTimeout(async () => {
+        // Generate Kyber keys
+        const { privateKey, publicKey } = generateKyber768KeyPair();
+
+        // Store private key in IndexedDB
+        await storePrivateKey(privateKey);
+
+        // Send public key to backend
+        await fetch('/api/storePublicKey', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ publicKey }),
+        });
+
+        console.log("Keys successfully generated and stored!");
+    }, 1000); // Delay to ensure navigation completes
+
     } catch (error) {
       console.error("Error during OTP verification:", error.message)
       setError(error.message)
