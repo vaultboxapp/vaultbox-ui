@@ -33,6 +33,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@ui' : path.resolve(__dirname,'./src/components/ui'),
+      '@chat' : path.resolve(__dirname,'./src/features/chat'),
+      '@login' : path.resolve(__dirname,'./src/features/login'),
+      '@meet' : path.resolve(__dirname,'./src/features/meeting'),
     },
   },
 });
