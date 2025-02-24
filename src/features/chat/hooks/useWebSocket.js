@@ -1,10 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-export const useWebSocket = (userId, onGrpMessage) => {
+export const useWebSocket = (userId, onIncomingMessage) => {
   const ws = useRef(null);
   const stableUserId = useRef(userId);
-  const isMounted = useRef(true);
 
   const connect = useCallback(() => {
     if (ws.current?.connected) return;
@@ -14,7 +13,6 @@ export const useWebSocket = (userId, onGrpMessage) => {
       ws.current.disconnect();
     }
 
-    // Use relative URL so Vite's proxy forwards the connection
     ws.current = io("/", {
       path: "/chat/socket.io",
       transports: ["websocket"],
@@ -30,9 +28,14 @@ export const useWebSocket = (userId, onGrpMessage) => {
       ws.current.emit("authenticate", { userId: stableUserId.current });
     });
 
-    ws.current.on("grpMessage", (newMsg) => {
-      console.log("Received grpMessage:", newMsg);
-      if (onGrpMessage) onGrpMessage(newMsg);
+    ws.current.on("grpMessage", (msg) => {
+      console.log("Received grpMessage:", msg);
+      if (onIncomingMessage) onIncomingMessage(msg);
+    });
+
+    ws.current.on("message", (msg) => {
+      console.log("Received direct message:", msg);
+      if (onIncomingMessage) onIncomingMessage(msg);
     });
 
     ws.current.on("disconnect", (reason) => {
@@ -41,15 +44,12 @@ export const useWebSocket = (userId, onGrpMessage) => {
 
     ws.current.on("connect_error", (error) => {
       console.error("Socket connection error:", error.message);
-      // Let socket.io handle reconnection automatically.
     });
-  }, [onGrpMessage]);
+  }, [onIncomingMessage]);
 
   useEffect(() => {
-    isMounted.current = true;
     connect();
     return () => {
-      isMounted.current = false;
       if (ws.current) {
         console.log("Disconnecting WebSocket");
         ws.current.disconnect();
@@ -58,10 +58,15 @@ export const useWebSocket = (userId, onGrpMessage) => {
     };
   }, [connect]);
 
+  // When sending a message, choose the event based on payload type.
   const sendMessage = useCallback((payload) => {
     if (ws.current?.connected) {
-      console.log("Sending grpMessage:", payload);
-      ws.current.emit("grpMessage", payload);
+      console.log("Sending message:", payload);
+      if (payload.type === "direct_message") {
+        ws.current.emit("message", payload);
+      } else {
+        ws.current.emit("grpMessage", payload);
+      }
     } else {
       console.warn("WebSocket not connected; message not sent");
     }
