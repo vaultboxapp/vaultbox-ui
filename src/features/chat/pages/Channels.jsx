@@ -6,6 +6,7 @@ import ChatHeader from '../components/ChatHeader';
 import MessageList from '../components/MessageList';
 import MessageInput from '../components/MessageInput';
 import ChannelInfo from '../components/ChannelInfo';
+import { useAuth } from '@login/context/auth';
 
 const Channels = () => {
   const {
@@ -19,7 +20,9 @@ const Channels = () => {
     uploadFile,
   } = useChat('channel');
 
-  const userId = "1"; // Adjust as needed
+  const user = useAuth;
+  const userId = user?.id;
+
   const [showChannelInfo, setShowChannelInfo] = useState(false);
 
   // Memoize group message handler so it doesn't trigger unnecessary re-renders.

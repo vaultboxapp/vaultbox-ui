@@ -6,6 +6,7 @@ import ChatHeader from '../components/ChatHeader';
 import MessageList from '../components/MessageList';
 import MessageInput from '../components/MessageInput';
 import UserProfile from '../components/UserProfile';
+import { useAuth } from '@login/context/auth';
 
 const Messages = () => {
   const {
@@ -19,7 +20,9 @@ const Messages = () => {
     uploadFile,
   } = useChat('direct');
 
-  const userId = "1"; // Ensure type matches your API
+  const user = useAuth();
+  const userId = user?.id;
+
   const handleIncomingMessage = (newMsg) => {
     console.log("New direct message:", newMsg);
     setMessages(prev => [...prev, newMsg]);
