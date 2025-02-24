@@ -33,6 +33,14 @@ const ChatService = {
     const response = await API.post(`/upload/channel/${chnl}`, formData);
     return response.data;
   },
+  getAllUsers: async () => {
+    try {
+      const response = await API.get('/channels/users');
+      return response.data;
+    } catch (error) {
+      handleError(error);
+    }
+  }, // No semicolon here; it’s part of the object
 };
 
 export default ChatService;
