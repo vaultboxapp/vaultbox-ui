@@ -54,23 +54,42 @@ export default function LoginPage() {
       handleLoginSuccess(response.user)
       navigate("/dashboard")
 
-      // 🔹 After navigating, generate and store keys
-      setTimeout(async () => {
-        // Generate Kyber keys
-        const { privateKey, publicKey } = generateKyber768KeyPair();
+  
+setTimeout(async () => {
+  try {
+      console.log("Starting key generation process...");
+      
+      // Generate Kyber keys
+      const { privateKey, publicKey } = await generateKyber768KeyPair();
+      console.log("Keys generated successfully");
+      
+      // Store private key in IndexedDB
+      await storePrivateKey(privateKey);
+      console.log("Private key stored in IndexedDB");
+      
+      // Send public key to backend
+      const apiResponse = await fetch('/api/storePublicKey', {
+          method: 'POST',
+          headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token') || ''}` 
+          },
+          body: JSON.stringify({ 
+              userId: response.user.id, 
+              publicKey 
+          }),
+      });
+      
+      if (!apiResponse.ok) {
+          throw new Error(`Failed to store public key: ${apiResponse.status}`);
+      }
 
-        // Store private key in IndexedDB
-        await storePrivateKey(privateKey);
-
-        // Send public key to backend
-        await fetch('/api/storePublicKey', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ publicKey }),
-        });
-
-        console.log("Keys successfully generated and stored!");
-    }, 1000); // Delay to ensure navigation completes
+      console.log("Keys successfully generated and stored!");
+  } catch (err) {
+      console.error("Error storing keys:", err);
+      
+  }
+}, 1000);
 
     } catch (error) {
       console.error("Error during OTP verification:", error.message)
