@@ -1,19 +1,38 @@
-import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import React from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Info, MoreVertical, UserPlus, Bell } from 'lucide-react';
+} from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { Info, MoreVertical, UserPlus, Bell, ChevronLeft } from "lucide-react"
 
-const ChatHeader = ({ chat, chatType, onInfoClick, unreadCount = 0, onAddMember }) => {
+const ChatHeader = ({
+  chat,
+  chatType,
+  onInfoClick,
+  onAddMember,
+  unreadCount = 0,
+  onBack, // Optional; only provided on mobile
+}) => {
   return (
     <header className="sticky top-0 z-10 flex h-[60px] items-center justify-between border-b bg-background px-4">
       <div className="flex items-center gap-3">
+        {/* Show the back chevron if onBack is provided */}
+        {onBack && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden"
+            onClick={onBack}
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
         {chatType === "direct" ? (
           <Avatar>
             <AvatarImage src={chat.avatar} />
@@ -47,7 +66,6 @@ const ChatHeader = ({ chat, chatType, onInfoClick, unreadCount = 0, onAddMember 
           )}
         </div>
       </div>
-
       <div className="flex items-center gap-2">
         {chatType === "channel" && (
           <Button variant="ghost" size="icon" onClick={onAddMember}>
@@ -72,7 +90,7 @@ const ChatHeader = ({ chat, chatType, onInfoClick, unreadCount = 0, onAddMember 
         </DropdownMenu>
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default ChatHeader;
+export default ChatHeader
