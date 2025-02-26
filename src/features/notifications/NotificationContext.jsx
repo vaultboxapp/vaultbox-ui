@@ -16,6 +16,7 @@ export const NotificationsProvider = ({ children, userId }) => {
 
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Calculate overall unread notifications (could be used for a global counter)
   useEffect(() => {
     setUnreadCount(notifications.filter((notif) => !notif.read).length);
   }, [notifications]);
@@ -24,14 +25,21 @@ export const NotificationsProvider = ({ children, userId }) => {
     localStorage.setItem("notifications", JSON.stringify(notifications));
   }, [notifications]);
 
+  // addNotification now supports notifications with extra fields like chatType and chatId.
   const addNotification = useCallback((notification) => {
+    // Optionally, ignore notifications that originate from yourself
+    // e.g., if(notification.senderId === currentUserId) return;
+    if (notification.senderId === userId) {
+      // Skip self messages
+      return;
+    }
+    
     const newNotification = {
       id: Date.now(),
       read: false,
       timestamp: Date.now(),
       ...notification,
     };
-
     setNotifications((prev) => [newNotification, ...prev]);
 
     if (Notification.permission === "granted") {
@@ -41,7 +49,28 @@ export const NotificationsProvider = ({ children, userId }) => {
     }
   }, []);
 
-  // WebSocket Integration
+  const markAsRead = useCallback((id) => {
+    setNotifications((prev) =>
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+  }, []);
+
+  const clearNotifications = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  // Mark notifications for a specific chat (channel or direct) as read.
+  const markChatNotificationsAsRead = useCallback((chatId) => {
+    setNotifications((prev) =>
+      prev.map((notif) => (notif.chatId === chatId ? { ...notif, read: true } : notif))
+    );
+  }, []);
+
+  // Initialize WebSocket – note we pass null for onIncomingMessage and addNotification for onNotification.
   useWebSocket(userId, null, addNotification);
 
   return (
@@ -50,12 +79,10 @@ export const NotificationsProvider = ({ children, userId }) => {
         notifications,
         unreadCount,
         addNotification,
-        markAsRead: (id) =>
-          setNotifications((prev) =>
-            prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
-          ),
-        markAllAsRead: () => setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true }))),
-        clearNotifications: () => setNotifications([]),
+        markAsRead,
+        markAllAsRead,
+        clearNotifications,
+        markChatNotificationsAsRead,
       }}
     >
       {children}
