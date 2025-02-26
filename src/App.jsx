@@ -1,5 +1,6 @@
 "use client"
 
+import SignUpPage from "./features/login/pages/sign-up-page.jsx";
 import { useState, useEffect } from "react"
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -44,6 +45,7 @@ function AppContent() {
     <Routes>
       {/* Public Route */}
       <Route path="/login" element={<LoginPage/>} />
+      <Route path="/sign-up" element={<SignUpPage />} />
 
       {/* Protected Routes */}
       <Route element={<AuthWrapper />}>
