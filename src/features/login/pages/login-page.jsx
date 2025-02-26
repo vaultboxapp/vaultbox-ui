@@ -10,7 +10,6 @@ import { login, verifyOTP } from "@/services/autheService"
 import { generateKyber768KeyPair } from '@/utils/kyberUtils';
 import { storePrivateKey } from '@/utils/indexedDBUtils';
 
-
 export default function LoginPage() {
   const { handleLoginSuccess } = useAuth()
   const navigate = useNavigate()
@@ -54,42 +53,32 @@ export default function LoginPage() {
       handleLoginSuccess(response.user)
       navigate("/dashboard")
 
-  
-setTimeout(async () => {
-  try {
-      console.log("Starting key generation process...");
-      
-      // Generate Kyber keys
-      const { privateKey, publicKey } = await generateKyber768KeyPair();
-      console.log("Keys generated successfully");
-      
-      // Store private key in IndexedDB
-      await storePrivateKey(privateKey);
-      console.log("Private key stored in IndexedDB");
-      
-      // Send public key to backend
-      const apiResponse = await fetch('/api/storePublicKey', {
-          method: 'POST',
-          headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token') || ''}` 
-          },
-          body: JSON.stringify({ 
-              userId: response.user.id, 
-              publicKey 
-          }),
-      });
-      
-      if (!apiResponse.ok) {
-          throw new Error(`Failed to store public key: ${apiResponse.status}`);
-      }
+      // Generate and store keys after successful OTP verification
+      setTimeout(async () => {
+        try {
+          const { privateKey, publicKey } = await generateKyber768KeyPair();
+          await storePrivateKey(privateKey);
 
-      console.log("Keys successfully generated and stored!");
-  } catch (err) {
-      console.error("Error storing keys:", err);
-      
-  }
-}, 1000);
+          // Send public key to backend
+          const apiResponse = await fetch('/api/storePublicKey', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            },
+            body: JSON.stringify({
+              userId: response.user.id,
+              publicKey
+            }),
+          });
+
+          if (!apiResponse.ok) {
+            throw new Error(`Failed to store public key: ${apiResponse.status}`);
+          }
+        } catch (err) {
+          console.error("Error storing keys:", err);
+        }
+      }, 1000);
 
     } catch (error) {
       console.error("Error during OTP verification:", error.message)
@@ -110,4 +99,3 @@ setTimeout(async () => {
     </div>
   )
 }
-
