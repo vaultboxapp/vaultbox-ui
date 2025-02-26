@@ -1,18 +1,16 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-export const useWebSocket = (userId, onIncomingMessage) => {
+export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
   const ws = useRef(null);
   const stableUserId = useRef(userId);
 
   const connect = useCallback(() => {
     if (ws.current?.connected) return;
-
     if (ws.current) {
       ws.current.removeAllListeners();
       ws.current.disconnect();
     }
-
     ws.current = io("/", {
       path: "/chat/socket.io",
       transports: ["websocket"],
@@ -38,6 +36,11 @@ export const useWebSocket = (userId, onIncomingMessage) => {
       if (onIncomingMessage) onIncomingMessage(msg);
     });
 
+    ws.current.on("notification", (notificationData) => {
+      console.log("Received notification:", notificationData);
+      if (onNotification) onNotification(notificationData);
+    });
+
     ws.current.on("disconnect", (reason) => {
       console.warn("WebSocket disconnected:", reason);
     });
@@ -45,7 +48,7 @@ export const useWebSocket = (userId, onIncomingMessage) => {
     ws.current.on("connect_error", (error) => {
       console.error("Socket connection error:", error.message);
     });
-  }, [onIncomingMessage]);
+  }, [onIncomingMessage, onNotification]);
 
   useEffect(() => {
     connect();
@@ -58,7 +61,7 @@ export const useWebSocket = (userId, onIncomingMessage) => {
     };
   }, [connect]);
 
-  // When sending a message, choose the event based on payload type.
+  // When sending a message, decide event based on payload type.
   const sendMessage = useCallback((payload) => {
     if (ws.current?.connected) {
       console.log("Sending message:", payload);

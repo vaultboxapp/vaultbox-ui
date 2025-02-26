@@ -1,10 +1,8 @@
-"use client";
-
+import { useCallback, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 import { useWebSocket } from "../hooks/useWebSocket";
 import ChatLayout from "../components/ChatLayout";
 import { useAuth } from "@login/context/auth";
-import { useCallback } from "react";
 
 const Messages = () => {
   const {
@@ -25,11 +23,10 @@ const Messages = () => {
     return <div>Loading user data...</div>;
   }
 
-  // Handle incoming direct messages and enrich with senderName if missing.
+  // Handle incoming direct messages.
   const handleIncomingMessage = useCallback(
     (newMsg) => {
       console.log("New direct message:", newMsg);
-      // If senderName is missing, try to set it:
       if (!newMsg.senderName) {
         if (newMsg.senderId === userId) {
           newMsg.senderName = "You";
@@ -44,23 +41,27 @@ const Messages = () => {
     [setMessages, userId, currentChat]
   );
 
+  // Handle incoming notifications.
+  const handleNotification = useCallback((notificationData) => {
+    console.log("New notification received:", notificationData);
+    // You can integrate with your notifications context here.
+  }, []);
+
   const { sendMessage: sendWebSocketMessage } = useWebSocket(
     userId,
-    handleIncomingMessage
+    handleIncomingMessage,
+    handleNotification
   );
 
-  // When sending a message, include senderName from the current user.
   const handleSendMessage = useCallback(
     (content) => {
       if (!currentChat) return;
       const messagePayload = {
         type: "direct_message",
         senderId: userId,
-        // For direct chat, currentChat is assumed to be the conversation partner.
         receiverId: currentChat._id,
         content,
         createdAt: new Date().toISOString(),
-        // Attach your username for outgoing messages.
         senderName: user.username,
       };
       sendWebSocketMessage(messagePayload);
@@ -68,6 +69,13 @@ const Messages = () => {
     },
     [currentChat, userId, user.username, sendWebSocketMessage, setMessages]
   );
+
+  useEffect(() => {
+    if (currentChat) {
+      setMessages([]);
+      fetchMessages(currentChat);
+    }
+  }, [currentChat, fetchMessages, setMessages]);
 
   if (error) return <div>Error: {error}</div>;
 
