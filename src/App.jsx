@@ -45,7 +45,7 @@ function AppContent() {
     <Routes>
       {/* Public Route */}
       <Route path="/login" element={<LoginPage/>} />
-      <Route path="/sign-up" element={<SignUpPage />} />
+      <Route path="/sign-up" element={<SignUpPage />} /> 
 
       {/* Protected Routes */}
       <Route element={<AuthWrapper />}>

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
@@ -119,8 +120,12 @@ export function LoginForm({ onLoginSuccess, error, loading }) {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2">
-          <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
             Protected by reCAPTCHA and subject to our Privacy Policy
+          </p> <br />
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+          <Link to="/sign-up" className="underline">Create Account</Link>
           </p>
         </CardFooter>
       </Card>
