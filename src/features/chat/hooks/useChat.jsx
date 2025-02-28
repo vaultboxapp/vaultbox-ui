@@ -5,16 +5,17 @@ export const useChat = (chatType) => {
   const [chats, setChats] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]); // For channels, these are the channel members
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Fetch channels or direct contacts
   const fetchChats = useCallback(async () => {
     setLoading(true);
     try {
       let response;
       if (chatType === "direct") {
-        response = await ChatService.getContacts();
+        response = await ChatService.getContacts(); // Fetch direct chat contacts
         if (response.success && Array.isArray(response.data)) {
           console.log("Contacts received:", response.data);
           setChats(response.data);
@@ -22,7 +23,7 @@ export const useChat = (chatType) => {
           setChats([]);
         }
       } else {
-        response = await ChatService.getChannels();
+        response = await ChatService.getChannels(); // Fetch channels
         if (response.success && response.msg && Array.isArray(response.msg.channels)) {
           console.log("Channels received:", response.msg.channels);
           setChats(response.msg.channels);
@@ -37,54 +38,52 @@ export const useChat = (chatType) => {
     }
   }, [chatType]);
 
+  // Fetch channel members when a channel is selected
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await ChatService.getAllUsers();
-      console.log("Raw response from getAllUsers:", response);
-      if (response.success && Array.isArray(response.msg)) {
-        console.log("Users received:", response.msg);
-        setUsers(response.msg);
-      } else if (response.success && Array.isArray(response.data)) {
-        console.log("Users received:", response.data);
-        setUsers(response.data);
+      if (chatType === "channel" && currentChat && currentChat._id) {
+        const response = await ChatService.getChannelMembers(currentChat._id);
+        if (response.success && Array.isArray(response.data)) {
+          console.log("Channel members received:", response.data);
+          setUsers(response.data);
+        } else if (response.success && Array.isArray(response.msg)) {
+          console.log("Channel members received:", response.msg);
+          setUsers(response.msg);
+        } else {
+          console.warn("No valid channel members data:", response);
+          setUsers([]);
+        }
       } else {
-        console.warn("No valid users data:", response);
         setUsers([]);
       }
     } catch (err) {
       console.error("Error fetching users:", err);
       setError(err?.message || "Error fetching users");
     }
-  }, []);
-  
+  }, [chatType, currentChat]);
 
+  // Fetch messages for selected chat
   const fetchMessages = useCallback(async (chat) => {
     if (!chat || !chat._id) {
       console.error("fetchMessages: Chat object or ID is missing", chat);
       return;
     }
-  
+
     setLoading(true);
     try {
       let data;
       if (chatType === "direct") {
-        const receiverId = Number(chat._id);
-        if (isNaN(receiverId)) {
-          console.error("Invalid receiverId (NaN):", chat._id);
-          setError("Invalid chat ID");
-          return;
-        }
-        console.log("Fetching direct messages for receiverId:", receiverId);
-        data = await ChatService.getDirectMessages(receiverId);
-        if (!data || !data.success || !data.msg || !Array.isArray(data.msg.messages)) {
-          console.error("Invalid data received:", data);
-          setMessages([]);
-          return;
-        }
+        data = await ChatService.getDirectMessages(chat._id);
       } else {
         data = await ChatService.getChannelMessages(chat._id);
       }
-  
+
+      if (!data || !data.success || !data.msg || !Array.isArray(data.msg.messages)) {
+        console.error("Invalid data received:", data);
+        setMessages([]);
+        return;
+      }
+
       setMessages((prev) => {
         const messageIds = new Set(prev.map((msg) => msg._id));
         const enrichedMessages = data.msg.messages.map((msg) => {
@@ -95,7 +94,6 @@ export const useChat = (chatType) => {
           };
         });
         const uniqueNewMessages = enrichedMessages.filter((msg) => !messageIds.has(msg._id));
-        // Sort messages so the oldest come first
         uniqueNewMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         return [...prev, ...uniqueNewMessages];
       });
@@ -106,21 +104,14 @@ export const useChat = (chatType) => {
       setLoading(false);
     }
   }, [chatType, users]);
-  
 
+  // Handle selecting a new chat
   const handleChatSelect = (chat) => {
     if (!chat || !chat._id) {
       console.error("handleChatSelect: Chat is invalid", chat);
       return;
     }
     if (chat._id === currentChat?._id) return;
-    if (!chats.find((c) => c._id === chat._id)) {
-      console.warn("Selected chat not yet available. Waiting...");
-      setCurrentChat(chat);
-      setMessages([]);
-      fetchMessages(chat);
-      return;
-    }
     setCurrentChat(chat);
     setMessages([]);
     fetchMessages(chat);
@@ -128,13 +119,10 @@ export const useChat = (chatType) => {
 
   useEffect(() => {
     fetchChats();
-    fetchUsers(); // Fetch users on mount
-  }, [fetchChats, fetchUsers]);
-
-  useEffect(() => {
-    console.log("Chats state updated:", chats);
-    console.log("Users state updated:", users);
-  }, [chats, users]);
+    if (chatType === "channel" && currentChat && currentChat._id) {
+      fetchUsers();
+    }
+  }, [fetchChats, fetchUsers, chatType, currentChat]);
 
   return {
     chats,

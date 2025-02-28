@@ -1,96 +1,48 @@
-import React from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ChevronLeft, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Info, MoreVertical, UserPlus, Bell, ChevronLeft } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const ChatHeader = ({
-  chat,
-  chatType,
-  onInfoClick,
-  onAddMember,
-  unreadCount = 0,
-  onBack, // Optional; only provided on mobile
-}) => {
+const ChatHeader = ({ chat, chatType, onInfoClick, onBack, isMobile = false, unreadCount = 0 }) => {
   return (
-    <header className="sticky top-0 z-10 flex h-[60px] items-center justify-between border-b bg-background px-4">
+    <div className="flex items-center justify-between p-4 border-b border-[#1F1F23]">
       <div className="flex items-center gap-3">
-        {/* Show the back chevron if onBack is provided */}
-        {onBack && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sm:hidden"
-            onClick={onBack}
-            aria-label="Back"
-          >
+        {isMobile && (
+          <Button variant="ghost" size="icon" onClick={onBack} className="mr-1">
             <ChevronLeft className="h-5 w-5" />
           </Button>
         )}
+
         {chatType === "direct" ? (
           <Avatar>
             <AvatarImage src={chat.avatar} />
             <AvatarFallback>{chat.username?.[0] || "?"}</AvatarFallback>
           </Avatar>
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
             #{chat.name?.[0] || "?"}
           </div>
         )}
+
         <div>
-          <h2 className="text-lg font-semibold">
-            {chat.name || chat.username}
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-medium">{chatType === "direct" ? chat.username : chat.name}</h2>
             {unreadCount > 0 && (
               <Badge variant="secondary" className="ml-2">
-                {unreadCount} new
+                {unreadCount}
               </Badge>
             )}
-          </h2>
-          {chatType === "direct" && (
-            <p className="text-sm text-muted-foreground">
-              {chat.status === "online" ? (
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                  Online
-                </span>
-              ) : (
-                "Offline"
-              )}
-            </p>
-          )}
+          </div>
+          {chat.status && <p className="text-xs text-muted-foreground">{chat.status}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        {chatType === "channel" && (
-          <Button variant="ghost" size="icon" onClick={onAddMember}>
-            <UserPlus className="h-5 w-5" />
-          </Button>
-        )}
-        <Button variant="ghost" size="icon" onClick={onInfoClick}>
-          <Info className="h-5 w-5" />
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Bell className="mr-2 h-4 w-4" />
-              Mute notifications
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+
+      <Button variant="ghost" size="icon" onClick={onInfoClick}>
+        <Info className="h-5 w-5" />
+      </Button>
+    </div>
   )
 }
 
 export default ChatHeader
+

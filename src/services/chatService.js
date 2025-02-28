@@ -1,16 +1,16 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: '/', // Now API calls are sent to /api/...
+  baseURL: '/', // API calls are sent to /api/...
 });
 
 const ChatService = {
-  getChannels: async () => {
-    const response = await API.get('/channels');
+  getContacts: async () => {
+    const response = await API.get('/messages');
     return response.data;
   },
-  getContacts: async () => {
-    const response = await API.get('/messages'); // assuming /contacts for direct chats
+  getChannels: async () => {
+    const response = await API.get('/channels');
     return response.data;
   },
   getDirectMessages: async (chatId) => {
@@ -27,20 +27,42 @@ const ChatService = {
     const response = await API.post(`/upload/direct/${chatId}`, formData);
     return response.data;
   },
-  uploadFileToChannel: async (chnl, file) => {
+  uploadFileToChannel: async (chnlId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await API.post(`/upload/channel/${chnl}`, formData);
+    const response = await API.post(`/upload/channel/${chnlId}`, formData);
     return response.data;
   },
-  getAllUsers: async () => {
-    try {
-      const response = await API.get('/channels/users');
-      return response.data;
-    } catch (error) {
-      handleError(error);
-    }
-  }, // No semicolon here; it’s part of the object
+  // New endpoints for channel functionality:
+  getChannelMembers: async (channelId) => {
+    const response = await API.get(`/channels/${channelId}/members`);
+    return response.data;
+  },
+  createChannel: async (data) => {
+    const response = await API.post('/channels/create', data);
+    return response.data;
+  },
+  deleteChannel: async (channelId) => {
+    const response = await API.delete(`/channels/delete/${channelId}`);
+    return response.data;
+  },
+  addMember: async (userId, channelId) => {
+    const response = await API.post('/channels/addMember', { userId, channelId });
+    return response.data;
+  },
+  removeMember: async (userId, channelId) => {
+    const response = await API.post('/channels/removeMember', { userId, channelId });
+    return response.data;
+  },
+  addMemberToContacts: async (userId, channelId) => {
+    const response = await API.post('/channels/addContact', { userId, channelId });
+    return response.data;
+  },
+  searchUsers: async (query) => {
+    if (!query) throw new Error("Query parameter is required");
+    const response = await API.get(`/users/search?q=${encodeURIComponent(query)}`);
+    return response.data;
+  },
 };
 
 export default ChatService;
