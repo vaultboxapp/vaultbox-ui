@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Bell, Menu, Settings, User, LogOut, Home, Video, MessageSquare, Hash, Search, LayoutDashboard } from 'lucide-react';
 import NotificationPanel from "@/features/notifications/NotificationPanel";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/features/login/context/auth';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -167,12 +167,6 @@ const Layout = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
