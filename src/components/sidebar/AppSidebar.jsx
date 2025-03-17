@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/features/login/context/auth';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import { useNotifications } from '@/features/notifications/NotificationContext';
 import { Home, Video, MessageSquare, Hash, LogOut, Settings, ChevronDown, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/ui/logo';
+
 
 const navItems = [
   { icon: Home, label: 'Overview', path: '/dashboard' },
@@ -104,12 +105,6 @@ export function AppSidebar({ isOpen, onClose }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem asChild>
-              <Link to="/profile" className="flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/settings" className="flex items-center">
                 <Settings className="mr-2 h-4 w-4" />
