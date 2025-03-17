@@ -2,7 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 import { useWebSocket } from "../hooks/useWebSocket";
 import ChatLayout from "../components/ChatLayout";
-import { useAuth } from "@login/context/auth";
+import { useAuth } from "@/features/auth/context/AuthContext"
 
 const Messages = () => {
   const {
