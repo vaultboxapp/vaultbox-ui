@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { useAuth } from "@login/context/auth"
+import { useAuth } from "@/features/auth/context/AuthContext"
 
 const ChannelInfo = ({ channel, onClose }) => {
   const [newMemberEmail, setNewMemberEmail] = useState("")
