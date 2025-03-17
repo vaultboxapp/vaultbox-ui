@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "@/components/Theme/ThemeProvider"
-import { useAuth } from "@/features/login/context/auth"
+import { useAuth } from "@/features/auth/context/AuthContext"
 
 const APP_VERSION = "1.0.0"
 
@@ -42,8 +42,8 @@ const Settings = () => {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="user-name">Name</Label>
-            <Input id="user-name" value={user?.name || ""} readOnly />
+            <Label htmlFor="user-name">Username</Label>
+            <Input id="user-name" value={user?.username || user?.name || ""} readOnly />
           </div>
           <div>
             <Label htmlFor="user-email">Email</Label>
