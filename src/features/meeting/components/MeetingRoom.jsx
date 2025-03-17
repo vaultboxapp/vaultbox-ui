@@ -6,7 +6,7 @@ import axios from "axios";
 import JitsiMeetComponent from "./JitsiMeetComponent";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useAuth } from "@/features/login/context/auth";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 const MeetingRoom = () => {
   const { user } = useAuth();

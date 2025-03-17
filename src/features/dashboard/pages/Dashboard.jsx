@@ -1,4 +1,4 @@
-import { useAuth } from "@/features/login/context/auth"
+import { useAuth } from "@/features/auth/context/AuthContext"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronRightIcon } from "lucide-react"
