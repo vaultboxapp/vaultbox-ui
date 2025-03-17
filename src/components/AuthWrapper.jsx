@@ -1,9 +1,9 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "@/features/login/context/auth";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { Loading } from "@/components/ui/loading";
 
-export function AuthWrapper() {
+export default function AuthWrapper() {
   const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) return <Loading />; // ✅ Show loading until auth state is confirmed
