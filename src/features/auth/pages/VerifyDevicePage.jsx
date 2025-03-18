@@ -39,9 +39,9 @@ const VerifyDevicePage = () => {
     try {
       const { success, error } = await verifyDevice({
         userId,
-        deviceId,
         otp: otpCode,
-      })
+      });
+      
 
       if (success) {
         navigate("/dashboard")
@@ -76,7 +76,12 @@ const VerifyDevicePage = () => {
           <OTPInput length={6} onComplete={handleOtpComplete} />
         </div>
 
-        <Button className="w-full rounded-xl" onClick={handleVerify} disabled={isSubmitting || otpCode.length !== 6}>
+        <Button 
+          type="submit" 
+          className="w-full rounded-xl" 
+          disabled={isSubmitting || otpCode.length !== 6}
+          onClick={handleVerify}
+        >
           {isSubmitting ? "Verifying..." : "Verify Device"}
         </Button>
 

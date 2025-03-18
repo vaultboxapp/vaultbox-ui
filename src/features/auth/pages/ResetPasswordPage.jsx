@@ -56,14 +56,23 @@ const ResetPasswordPage = () => {
       return
     }
 
+    if (!token) {
+      setResetError("Reset token is missing. Please use the link from your email.")
+      return
+    }
+
     setIsSubmitting(true)
     setResetError(null)
 
     try {
-      const { success, error } = await resetPassword({
+      console.log("Submitting reset password with token:", token);
+      
+      const { success, error, data } = await resetPassword({
         token,
-        password: values.password,
+        newPassword: values.password,
       })
+
+      console.log("Reset password result:", { success, error, data });
 
       if (success) {
         setResetSuccess(true)
@@ -71,6 +80,7 @@ const ResetPasswordPage = () => {
         setResetError(error || "Failed to reset password")
       }
     } catch (error) {
+      console.error("Reset password error:", error);
       setResetError(error.message || "An error occurred")
     } finally {
       setIsSubmitting(false)
@@ -127,7 +137,11 @@ const ResetPasswordPage = () => {
           className="rounded-xl"
         />
 
-        <Button type="submit" className="w-full rounded-xl" disabled={isSubmitting || !token}>
+        <Button 
+          type="submit" 
+          className="w-full rounded-xl" 
+          disabled={isSubmitting || !values.password || !values.confirmPassword}
+        >
           {isSubmitting ? "Resetting..." : "Reset Password"}
         </Button>
       </form>

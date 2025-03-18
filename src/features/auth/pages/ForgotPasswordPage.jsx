@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useForm } from "../hooks/useForm"
 import AuthCard from "../components/AuthCard"
-import CaptchaWidget from "../components/CaptchaWidget"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,7 +16,6 @@ const ForgotPasswordPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [requestSent, setRequestSent] = useState(false)
   const [requestError, setRequestError] = useState(null)
-  const [captchaToken, setCaptchaToken] = useState(null)
 
   const { values, errors, touched, handleChange, handleBlur, validate } = useForm({
     email: "",
@@ -35,11 +33,6 @@ const ForgotPasswordPage = () => {
     e.preventDefault()
 
     if (!validate(validationSchema)) {
-      return
-    }
-
-    if (!captchaToken) {
-      // Show error that captcha is required
       return
     }
 
@@ -116,9 +109,11 @@ const ForgotPasswordPage = () => {
           {touched.email && errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
         </div>
 
-        <CaptchaWidget onVerify={setCaptchaToken} />
-
-        <Button type="submit" className="w-full rounded-xl" disabled={isSubmitting || !captchaToken}>
+        <Button 
+          type="submit" 
+          className="w-full rounded-xl" 
+          disabled={isSubmitting || !values.email}
+        >
           {isSubmitting ? "Sending..." : "Send Reset Link"}
         </Button>
       </form>
