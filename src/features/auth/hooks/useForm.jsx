@@ -6,16 +6,26 @@ export const useForm = (initialValues = {}) => {
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
-  const [hasInput, setHasInput] = useState(false)
+  
+  // Track if required fields have input
+  const [hasRequiredInput, setHasRequiredInput] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setValues((prev) => ({ ...prev, [name]: value }))
-    
-    // Update hasInput whenever values change
-    const updatedValues = { ...values, [name]: value }
-    const hasAnyInput = Object.values(updatedValues).some(val => val && val.trim() !== '')
-    setHasInput(hasAnyInput)
+    setValues((prev) => {
+      const updatedValues = { ...prev, [name]: value }
+      
+      // Check if all required fields have values
+      // This is a simple check that can be improved based on your validation needs
+      const hasAllRequiredFields = Object.values(updatedValues).every(val => 
+        val !== undefined && val !== null && val.toString().trim() !== ''
+      )
+      
+      // Update the hasRequiredInput state
+      setHasRequiredInput(hasAllRequiredFields)
+      
+      return updatedValues
+    })
 
     // Clear error when field is changed
     if (errors[name]) {
@@ -58,6 +68,7 @@ export const useForm = (initialValues = {}) => {
     setValues(initialValues)
     setErrors({})
     setTouched({})
+    setHasRequiredInput(false)
   }
 
   return {
@@ -71,7 +82,7 @@ export const useForm = (initialValues = {}) => {
     setValues,
     setErrors,
     isValid: Object.keys(errors).length === 0,
-    hasInput,
+    hasRequiredInput, // Use this for button enabling/disabling
   }
 }
 

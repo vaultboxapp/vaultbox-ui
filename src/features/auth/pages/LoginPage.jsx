@@ -42,23 +42,24 @@ const LoginPage = () => {
     setIsSubmitting(true)
     setLoginError(null)
     try {
-      const { success, requiresDeviceVerification, error } = await login({
+      const { success, requiresDeviceVerification, error, userId, deviceId } = await login({
         email: values.email,
         password: values.password,
-      })
+      });
       if (success) {
         navigate("/dashboard")
       } else if (requiresDeviceVerification) {
         navigate("/verify-device", {
           state: {
-            userId: values.email,
-            deviceId: "",
+            userId,    // use userId returned from backend
+            deviceId,  // use deviceId returned from backend
             email: values.email,
           },
         })
       } else {
         setLoginError(error || "Login failed. Please check your credentials.")
       }
+      
     } catch (err) {
       setLoginError(err.message || "An error occurred during login")
     } finally {

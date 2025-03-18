@@ -130,12 +130,12 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Standard login – expects user JSON and refreshToken in the response.
+  // Standard login – use relative URL with /api prefix
   const login = useCallback(async (credentials) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -143,16 +143,17 @@ export function AuthProvider({ children }) {
       })
       const data = await response.json()
       if (!response.ok) {
-        if (response.status === 403 && data.message === "New device detected") {
+        if (response.status === 403 && data.message === "New device detected. OTP sent for verification.") {
           return {
             success: false,
             requiresDeviceVerification: true,
             userId: data.userId,
             deviceId: data.deviceId,
-          }
+          };
         }
-        throw new Error(data.message || "Login failed")
+        throw new Error(data.message || "Login failed");
       }
+      
       if (data.user) {
         setUserData(data.user, data.refreshToken)
       } else {
@@ -167,18 +168,16 @@ export function AuthProvider({ children }) {
     }
   }, [setUserData])
 
-  // Simplified OAuth login – triggers a full-page redirect.
-  // Your backend should handle the OAuth flow, set the tokens as HTTP-only cookies,
-  // and then redirect back to your front end.
+  // Simplified OAuth login – use relative URL
   const oauthLogin = useCallback(() => {
-    window.location.href = "http://localhost:5000/api/auth/google" 
-
+    window.location.href = "/api/auth/google"
   }, [])
 
+  // Update logout to use relative URL
   const logout = useCallback(async () => {
     try {
       // Call the logout API endpoint
-      const response = await fetch("http://localhost:5000/api/auth/logout", {
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -216,15 +215,22 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Other functions (register, verifyEmail, verifyDevice, forgotPassword, resetPassword, enableMfa, verifyMfa) remain unchanged.
+  // Update all other API calls to use relative URLs
   const register = async (userData) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      // Add a default captcha token if needed by the backend
+      const dataToSend = {
+        ...userData,
+        captchaToken: "bypass-captcha-for-development"
+      }
+      
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(dataToSend),
+        credentials: "include",
       })
       const data = await response.json()
       if (!response.ok) {
@@ -243,7 +249,7 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/verify-email?token=${token}`, {
+      const response = await fetch(`/api/auth/verify-email?token=${token}`, {
         method: "GET",
         credentials: "include",
       })
@@ -264,7 +270,7 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/verify-device", {
+      const response = await fetch("/api/auth/verify-device", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(verificationData),
@@ -288,7 +294,7 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/forgot-password", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -310,17 +316,26 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/reset-password", {
+      console.log("Resetting password with data:", resetData); // Add logging
+      
+      const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(resetData),
+        credentials: "include",
       })
+      
+      console.log("Reset password response status:", response.status);
+      
       const data = await response.json()
+      console.log("Reset password response data:", data);
+      
       if (!response.ok) {
         throw new Error(data.message || "Password reset failed")
       }
       return { success: true, data }
     } catch (err) {
+      console.error("Reset password error:", err);
       setError(err.message)
       return { success: false, error: err.message }
     } finally {
@@ -332,7 +347,7 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/enable-mfa", {
+      const response = await fetch("/api/auth/enable-mfa", {
         method: "POST",
         credentials: "include",
       })
@@ -353,7 +368,7 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("http://localhost:5000/api/auth/verify-mfa", {
+      const response = await fetch("/api/auth/verify-mfa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
@@ -381,7 +396,7 @@ export function AuthProvider({ children }) {
   const refreshToken = async () => {
     try {
       if (!refreshTokenValue) return
-      const response = await fetch("http://localhost:5000/api/auth/refresh-token", {
+      const response = await fetch("/api/auth/refresh-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: refreshTokenValue }),

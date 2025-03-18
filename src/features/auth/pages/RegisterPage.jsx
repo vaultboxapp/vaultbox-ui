@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext"
 import { useForm } from "../hooks/useForm"
 import AuthCard from "../components/AuthCard"
 import PasswordInput from "../components/PasswordInput"
-import CaptchaWidget from "../components/CaptchaWidget"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +18,6 @@ const RegisterPage = () => {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [registrationSuccess, setRegistrationSuccess] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState(null)
   const [formError, setFormError] = useState(null)
 
   const { values, errors, touched, handleChange, handleBlur, validate, isValid } = useForm({
@@ -55,10 +53,6 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate(validationSchema)) return
-    if (!captchaToken) {
-      setFormError("Please complete the captcha")
-      return
-    }
     setIsSubmitting(true)
     setFormError(null)
     try {
@@ -66,7 +60,6 @@ const RegisterPage = () => {
         username: values.username,
         email: values.email,
         password: values.password,
-        captchaToken,
       })
       if (success) {
         setRegistrationSuccess(true)
@@ -206,9 +199,11 @@ const RegisterPage = () => {
           </Link>
         </div>
 
-        <CaptchaWidget onVerify={setCaptchaToken} />
-
-        <Button type="submit" className="w-full rounded-xl h-11" disabled={isSubmitting || !captchaToken || !isValid}>
+        <Button 
+          type="submit" 
+          className="w-full rounded-xl" 
+          disabled={isSubmitting || (!values.email || !values.password || !values.username)}
+        >
           {isSubmitting ? "Creating Account..." : "Create Account"}
         </Button>
       </form>
