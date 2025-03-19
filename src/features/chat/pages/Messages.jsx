@@ -1,8 +1,10 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useChat } from "../hooks/useChat";
 import { useWebSocket } from "../hooks/useWebSocket";
 import ChatLayout from "../components/ChatLayout";
 import { useAuth } from "@login/context/auth";
+import { useCipher } from '@/components/Layout/Layout';
+import { encryptText } from "../utils/encryption";
 
 const Messages = () => {
   const {
@@ -19,6 +21,9 @@ const Messages = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
+  // Access cipher mode from context
+  const { cipherMode } = useCipher();
+
   if (!user || !userId) {
     return <div>Loading user data...</div>;
   }
@@ -33,12 +38,14 @@ const Messages = () => {
         } else if (currentChat && currentChat.username) {
           newMsg.senderName = currentChat.username;
         } else {
-          newMsg.senderName = "Unknown";
+          // Try to get the name from users list or use sender ID as fallback
+          const sender = chats.find(chat => chat._id === newMsg.senderId);
+          newMsg.senderName = sender ? sender.username : `User ${newMsg.senderId.slice(0,5)}`;
         }
       }
       setMessages((prev) => [...prev, newMsg]);
     },
-    [setMessages, userId, currentChat]
+    [setMessages, userId, currentChat, chats]
   );
 
   // Handle incoming notifications.
@@ -77,6 +84,16 @@ const Messages = () => {
     }
   }, [currentChat, fetchMessages, setMessages]);
 
+  // Transform messages with encrypted text if cipher mode is enabled
+  const processedMessages = useMemo(() => {
+    if (!cipherMode) return messages;
+    
+    return messages.map(message => ({
+      ...message,
+      content: encryptText(message.content, String(message._id || message.createdAt))
+    }));
+  }, [messages, cipherMode]);
+
   if (error) return <div>Error: {error}</div>;
 
   return (
@@ -89,7 +106,7 @@ const Messages = () => {
         setMessages([]);
         fetchMessages(chat);
       }}
-      messages={messages}
+      messages={processedMessages}
       onSendMessage={handleSendMessage}
       onFileUpload={uploadFile}
       userId={userId}

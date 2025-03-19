@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserPlus, X, Trash2, UserCheck } from "lucide-react"
+import { UserPlus, X, Trash2, UserCheck, FileText, FileImage, Download } from "lucide-react"
 import { toast } from "sonner"
 import ChatService from "../../../services/chatService"
 import UserService from "@/services/userService"
@@ -24,6 +24,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { useAuth } from "@login/context/auth"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 
 const ChannelInfo = ({ channel, onClose }) => {
   const [newMemberEmail, setNewMemberEmail] = useState("")
@@ -219,58 +221,114 @@ const ChannelInfo = ({ channel, onClose }) => {
             </form>
           </div>
 
-          <div>
-            <h3 className="mb-4 text-sm font-medium">
-              Members ({Array.isArray(members) ? members.length : 0})
-            </h3>
-            <ScrollArea className="h-[300px] rounded-md border p-4">
-              {isLoading ? (
-                <div className="flex justify-center items-center h-full">
-                  <p>Loading members...</p>
-                </div>
-              ) : (
-                Array.isArray(members) &&
-                members.map((member) => (
-                  <div
-                    key={member._id}
-                    className="flex items-center justify-between rounded-lg p-2 hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback>{member.username?.[0] || "?"}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{member.username.toLowerCase()}</p>
-                        <p className="text-xs text-muted-foreground">{member.email}</p>
-                      </div>
+          <div className="mt-6">
+            <Tabs defaultValue="members">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="members">Members</TabsTrigger>
+                <TabsTrigger value="files">Shared Files</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="members" className="space-y-4 mt-4">
+                <h3 className="text-sm font-medium">
+                  Members ({Array.isArray(members) ? members.length : 0})
+                </h3>
+                <ScrollArea className="h-[300px] rounded-md border p-4">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                      <p>Loading members...</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleAddToContacts(member._id)}
-                        title="Add to contacts"
-                        disabled={isLoading || member._id === user?.id}
+                  ) : (
+                    Array.isArray(members) &&
+                    members.map((member) => (
+                      <div
+                        key={member._id}
+                        className="flex items-center justify-between rounded-lg p-2 hover:bg-muted/50"
                       >
-                        <UserCheck className="h-4 w-4" />
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback>{member.username?.[0] || "?"}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{member.username.toLowerCase()}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleAddToContacts(member._id)}
+                            title="Add to contacts"
+                            disabled={isLoading || member._id === user?.id}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                          {isOwner && member._id !== user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveMember(member._id)}
+                              title="Remove from channel"
+                              disabled={isLoading}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </ScrollArea>
+              </TabsContent>
+              
+              <TabsContent value="files" className="mt-4">
+                <h3 className="text-sm font-medium mb-4">
+                  Shared Files <Badge variant="outline" className="ml-2">12</Badge>
+                </h3>
+                <ScrollArea className="h-[300px] rounded-md border p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">meeting_notes.pdf</p>
+                          <p className="text-xs text-muted-foreground">1.2 MB</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="ml-2"
+                      >
+                        <Download className="h-4 w-4" />
                       </Button>
-                      {isOwner && member._id !== user?.id && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMember(member._id)}
-                          title="Remove from channel"
-                          disabled={isLoading}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                          <FileImage className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">screenshot.png</p>
+                          <p className="text-xs text-muted-foreground">850 KB</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="ml-2"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                ))
-              )}
-            </ScrollArea>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </SheetContent>

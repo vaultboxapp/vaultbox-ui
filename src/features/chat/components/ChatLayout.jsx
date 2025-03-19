@@ -9,6 +9,7 @@ import MessageList from "./MessageList"
 import MessageInput from "./MessageInput"
 import ChannelInfo from "./ChannelInfo"
 import UserProfile from "./UserProfile"
+import UserInfo from './UserInfo'
 import { MessageSquare } from 'lucide-react'
 
 export default function ChatLayout({
@@ -106,7 +107,7 @@ export default function ChatLayout({
               (chatType === "channel" ? (
                 <ChannelInfo channel={currentChat} />
               ) : (
-                <UserProfile user={currentChat} />
+                <UserInfo user={currentChat} />
               ))}
           </SheetContent>
         </Sheet>
@@ -173,7 +174,7 @@ export default function ChatLayout({
               (chatType === "channel" ? (
                 <ChannelInfo channel={currentChat} />
               ) : (
-                <UserProfile user={currentChat} />
+                <UserInfo user={currentChat} />
               ))}
           </SheetContent>
         </Sheet>
