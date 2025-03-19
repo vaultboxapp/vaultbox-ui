@@ -8,6 +8,7 @@ export const useChat = (chatType) => {
   const [users, setUsers] = useState([]); // For channels, these are the channel members
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [receiverPublicKey, setReceiverPublicKey] = useState(null);
 
   // Fetch channels or direct contacts
   const fetchChats = useCallback(async () => {
@@ -78,8 +79,18 @@ export const useChat = (chatType) => {
         data = await ChatService.getChannelMessages(chat._id);
       }
 
-      if (!data || !data.success || !data.msg || !Array.isArray(data.msg.messages)) {
+      if (!data || !data.success || !data.msg) {
         console.error("Invalid data received:", data);
+        setMessages([]);
+        return;
+      }
+
+      // Set receiver's public key if it exists
+      if (chatType === "direct" && data.msg.receiverPublicKey) {
+        setReceiverPublicKey(data.msg.receiverPublicKey);
+      }
+
+      if (!Array.isArray(data.msg.messages)) {
         setMessages([]);
         return;
       }
@@ -146,5 +157,6 @@ export const useChat = (chatType) => {
         setError(err?.message || "Error uploading file");
       }
     }, [currentChat, chatType]),
+    receiverPublicKey,
   };
 };
