@@ -43,13 +43,47 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
       console.log("Received encrypted group message:", msg);
       
       try {
-        // Check if this message is individually encrypted for this user
-        if (msg.encrypted && msg.recipientEncryptions) {
-          // This is a secure group message with individual encryption
+        // Check if this is an optimized group message (new format)
+        if (msg.encrypted && msg.messageContent && msg.keyDistribution) {
+          // First get my key distribution data
+          const myKeyData = msg.keyDistribution[userIdStr];
+          
+          if (myKeyData) {
+            // Decrypt the group key using my private key and sender's public key
+            const groupKey = await cryptoService.decryptGroupKey(
+              myKeyData.cipherText,
+              myKeyData.nonce,
+              msg.senderId,
+              msg.senderPublicKey
+            );
+            
+            // Now decrypt the actual message using the group key
+            const decryptedContent = cryptoService.decryptMessage(
+              msg.messageContent.cipherText,
+              msg.messageContent.nonce,
+              groupKey
+            );
+            
+            // Replace the encrypted content with decrypted content
+            msg.content = decryptedContent;
+            msg.encrypted = false;
+            
+            // Clean up encryption data before passing to handler
+            delete msg.messageContent;
+            delete msg.keyDistribution;
+            
+            if (onIncomingMessage) onIncomingMessage(msg);
+          } else {
+            console.warn("Message encrypted, but no key data for this user");
+            if (onIncomingMessage) onIncomingMessage(msg); // Still deliver the message
+          }
+        }
+        // Check if this is a legacy per-user encrypted message
+        else if (msg.encrypted && msg.recipientEncryptions) {
+          // Legacy format - individual message encryption per user
           const myEncryption = msg.recipientEncryptions[userIdStr];
           
           if (myEncryption) {
-            // This message has encryption data specifically for this user
             const decryptedContent = await cryptoService.decryptFromSender(
               myEncryption.cipherText,
               myEncryption.nonce,
@@ -57,18 +91,17 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
               msg.senderPublicKey
             );
             
-            // Replace the encrypted content with decrypted content
             msg.content = decryptedContent;
             msg.encrypted = false;
-            delete msg.recipientEncryptions; // Remove encryption data from the message object
+            delete msg.recipientEncryptions;
             
             if (onIncomingMessage) onIncomingMessage(msg);
           } else {
-            console.warn("Message encrypted, but no encryption data for this user");
-            if (onIncomingMessage) onIncomingMessage(msg); // Still deliver the message
+            console.warn("Legacy encryption format: no data for this user");
+            if (onIncomingMessage) onIncomingMessage(msg);
           }
-        } 
-        // Legacy encrypted messages - decrypt directly
+        }
+        // Simple encryption format with direct content
         else if (msg.encrypted && msg.nonce) {
           const decryptedContent = await cryptoService.decryptFromSender(
             msg.content,
@@ -200,7 +233,7 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
     }
   };
 
-  // Encrypt and send a group message
+  // Encrypt and send a group message - optimized version
   const sendGroupMessage = async (payload) => {
     if (!ws.current?.connected) {
       console.warn("WebSocket not connected; message not sent");
@@ -213,20 +246,20 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
       const members = await keyManagementService.getGroupMembersPublicKeys(payload.channelId);
       
       if (members.length > 0) {
-        // Create a copy of the payload for E2E encryption
+        // Create a copy of the payload for encryption
         const encryptedPayload = { ...payload };
         
-        // Encrypt the message for each recipient individually
+        // Use optimized group encryption (encrypt once, distribute key)
         const encryptionResult = await cryptoService.encryptForGroup(
           payload.content,
+          payload.channelId, // Pass channelId for group key management
           members
         );
         
-        // Message ID to trace message across different encryptions
+        // Update payload with encrypted content
+        encryptedPayload.messageContent = encryptionResult.messageContent;
+        encryptedPayload.keyDistribution = encryptionResult.keyDistribution;
         encryptedPayload.messageId = encryptionResult.originalMessageId;
-        
-        // Store individual encryptions for each recipient
-        encryptedPayload.recipientEncryptions = encryptionResult.individualEncryptions;
         encryptedPayload.encrypted = true;
         
         // Original content is replaced with a placeholder
@@ -237,7 +270,7 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
           stableUserId.current
         );
         
-        console.log("Sending encrypted group message:", encryptedPayload);
+        console.log("Sending optimized encrypted group message:", encryptedPayload);
         ws.current.emit("grpMessage", encryptedPayload);
       } else {
         console.warn("No member public keys found, sending unencrypted");

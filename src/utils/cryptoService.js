@@ -1,6 +1,6 @@
 import * as kyber from 'crystals-kyber-js';
 import sodium from 'libsodium-wrappers';
-import { openDatabase, storePrivateKey, getPrivateKey } from './indexedDBUtils';
+import { openDatabase, storePrivateKey, getPrivateKey, storeChannelKey, getChannelKey } from './indexedDBUtils';
 
 // Initialize Libsodium
 await sodium.ready;
@@ -9,6 +9,7 @@ await sodium.ready;
 class CryptoService {
   constructor() {
     this.encryptionCache = new Map(); // Cache for shared secrets
+    this.groupKeyCache = new Map(); // Cache for group keys
   }
 
   // Generate Kyber-768 Key Pair
@@ -151,28 +152,93 @@ class CryptoService {
     }
   }
 
-  // Encrypt a message for multiple recipients (group chat)
-  async encryptForGroup(message, recipients) {
+  // Generate a random group key
+  generateGroupKey() {
+    return sodium.to_base64(sodium.randombytes_buf(sodium.crypto_secretbox_KEYBYTES));
+  }
+
+  // Get or generate group key
+  async getGroupKey(channelId) {
+    // Check cache first
+    if (this.groupKeyCache.has(channelId)) {
+      return this.groupKeyCache.get(channelId);
+    }
+
+    // Try to get from IndexedDB
+    let groupKey = await getChannelKey(channelId);
+    
+    if (!groupKey) {
+      // Generate new key if not found
+      groupKey = this.generateGroupKey();
+      // Store in IndexedDB
+      await storeChannelKey(channelId, groupKey);
+    }
+    
+    // Cache key
+    this.groupKeyCache.set(channelId, groupKey);
+    return groupKey;
+  }
+
+  // Encrypt a group key for a specific recipient
+  async encryptGroupKeyForRecipient(groupKey, recipientId, recipientPublicKey) {
     try {
-      const result = {
-        individualEncryptions: {},
-        originalMessageId: Date.now().toString()
-      };
+      const sharedSecret = await this.getSharedSecret(recipientId, recipientPublicKey);
+      if (!sharedSecret) {
+        throw new Error('Could not generate shared secret');
+      }
       
-      // Encrypt the same message individually for each recipient
+      return this.encryptMessage(groupKey, sharedSecret);
+    } catch (error) {
+      console.error(`Error encrypting group key for recipient ${recipientId}:`, error);
+      throw error;
+    }
+  }
+
+  // Decrypt a group key from a sender
+  async decryptGroupKey(encryptedKey, nonce, senderId, senderPublicKey) {
+    try {
+      return await this.decryptFromSender(encryptedKey, nonce, senderId, senderPublicKey);
+    } catch (error) {
+      console.error('Error decrypting group key:', error);
+      throw error;
+    }
+  }
+
+  // Encrypt a message for a group (more efficient approach)
+  async encryptForGroup(message, channelId, recipients) {
+    try {
+      // Get or generate a symmetric key for this group
+      const groupKey = await this.getGroupKey(channelId);
+      
+      // Encrypt the message once with the group key
+      const encryptedMessage = this.encryptMessage(message, groupKey);
+      
+      // For new recipients, encrypt the group key with their public key
+      const keyDistribution = {};
+      
       for (const recipient of recipients) {
         const { recipientId, publicKey } = recipient;
         if (publicKey) {
           try {
-            const encryption = await this.encryptForRecipient(message, recipientId, publicKey);
-            result.individualEncryptions[recipientId] = encryption;
+            // Encrypt the group key for each recipient using their public key
+            const encryptedKey = await this.encryptGroupKeyForRecipient(
+              groupKey, 
+              recipientId, 
+              publicKey
+            );
+            
+            keyDistribution[recipientId] = encryptedKey;
           } catch (err) {
-            console.error(`Failed to encrypt for recipient ${recipientId}:`, err);
+            console.error(`Failed to encrypt key for recipient ${recipientId}:`, err);
           }
         }
       }
       
-      return result;
+      return {
+        messageContent: encryptedMessage,
+        keyDistribution,
+        originalMessageId: Date.now().toString()
+      };
     } catch (error) {
       console.error('Error encrypting for group:', error);
       throw error;
@@ -182,6 +248,7 @@ class CryptoService {
   // Clear the encryption cache
   clearCache() {
     this.encryptionCache.clear();
+    this.groupKeyCache.clear();
   }
 }
 
