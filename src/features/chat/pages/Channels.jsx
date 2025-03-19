@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useMemo } from "react"
 import { useChat } from "../hooks/useChat"
 import { useWebSocket } from "../hooks/useWebSocket"
 import ChatLayout from "../components/ChatLayout"
@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus } from "lucide-react"
 import ChatService from "../../../services/chatService"
 import { toast } from "sonner"
+import { useCipher } from '@/components/Layout/Layout'
+import { encryptText } from "../utils/encryption"
 
 const Channels = () => {
   const {
@@ -36,6 +38,9 @@ const Channels = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [newChannel, setNewChannel] = useState({ name: "", description: "" })
   const [isCreating, setIsCreating] = useState(false)
+
+  // Access cipher mode from context
+  const { cipherMode } = useCipher()
 
   if (!user || !userId) {
     return <div>Loading user data...</div>
@@ -129,6 +134,16 @@ const Channels = () => {
     }
   }, [currentChat, fetchMessages, setMessages])
 
+  // Transform messages with encrypted text if cipher mode is enabled
+  const processedMessages = useMemo(() => {
+    if (!cipherMode) return messages;
+    
+    return messages.map(message => ({
+      ...message,
+      content: encryptText(message.content, String(message._id || message.createdAt))
+    }));
+  }, [messages, cipherMode]);
+
   if (error) return <div>Error: {error}</div>
 
   return (
@@ -146,7 +161,7 @@ const Channels = () => {
         chats={channels}
         currentChat={currentChat}
         setCurrentChat={setCurrentChat}
-        messages={messages}
+        messages={processedMessages}
         onSendMessage={handleSendMessage}
         onFileUpload={uploadFile}
         userId={userId}
