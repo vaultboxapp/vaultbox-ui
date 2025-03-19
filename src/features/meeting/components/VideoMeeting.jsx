@@ -13,12 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createMeeting } from '../services/meetingService';
 
 const VideoMeeting = () => {
   const { user } = useAuth();
   const [inputRoomName, setInputRoomName] = useState("");
   const [loading, setLoading] = useState(false);
-  // For admins: toggle between join mode and create mode.
+  // Toggle between join mode and create mode (available for all users)
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
   const navigate = useNavigate();
@@ -28,68 +29,47 @@ const VideoMeeting = () => {
     setTimeout(() => setAlert({ show: false, message: "", type: "" }), 3000);
   };
 
-  // For admins: Fetch a Jitsi token using the meeting ID.
-  const fetchToken = async (room) => {
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/jitsi-token",
-        { room },
-        { withCredentials: true }
-      );
-      if (!response.data.token) {
-        throw new Error("Token not received");
-      }
-      // Navigate to the meeting room with the token in state.
-      navigate(`/video/${room}`, { state: { token: response.data.token } });
-      showAlert("Joined meeting successfully");
-    } catch (error) {
-      showAlert("Failed to retrieve meeting token. Please try again.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle creating a meeting for admins.
-  // (This version uses the jitsi-token endpoint for both join and create.)
+  // Handle creating a meeting (all users)
   const handleCreateMeeting = async () => {
     if (!inputRoomName.trim()) {
       showAlert("Please enter a valid room name.", "error");
       return;
     }
+    setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/jitsi-token",
-        { room: inputRoomName.trim() },
-        { withCredentials: true }
-      );
-      if (!response.data.token) {
-        throw new Error("Token not received");
-      }
-      navigate(`/video/${inputRoomName.trim()}`, { state: { token: response.data.token } });
+      // Use the new service function
+      const data = await createMeeting(inputRoomName.trim());
+      
+      console.log("Meeting created:", data);
+      
+      const token = encodeURIComponent(data.token);
+      navigate(`/video/${data.room}?jwt=${token}`);
       showAlert("Meeting created successfully");
     } catch (error) {
-      showAlert("Error creating meeting", "error");
+      console.error("Error creating meeting:", error);
+      if (error.response?.status === 409) {
+        showAlert("Meeting name already exists", "error");
+      } else {
+        showAlert("Error creating meeting", "error");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle joining an existing meeting.
+  // Handle joining an existing meeting
   const handleJoinMeeting = () => {
     if (!inputRoomName.trim()) {
       showAlert("Please enter a valid meeting link or ID.", "error");
       return;
     }
-    if (user.role !== "admin") {
-      // Normal users join directly without a token.
-      navigate(`/video/${inputRoomName.trim()}`, { state: { token: "" } });
-      showAlert("Joined meeting successfully");
+    
+    if (isCreateMode) {
+      handleCreateMeeting();
     } else {
-      // For admins: if in create mode, create meeting; otherwise, join.
-      if (isCreateMode) {
-        handleCreateMeeting();
-      } else {
-        fetchToken(inputRoomName.trim());
-      }
+      // For joining, we navigate directly to the meeting room
+      navigate(`/video/${inputRoomName.trim()}`);
+      showAlert("Joining meeting...");
     }
   };
 
@@ -131,33 +111,25 @@ const VideoMeeting = () => {
         <Card className="border-2 bg-transparent">
           <CardContent className="pt-6">
             <div className="space-y-6">
-              {/* For admins, show toggle to switch between Join and Create */}
-              {user.role === "admin" && (
-                <div className="flex items-center justify-center space-x-2">
-                  <Label htmlFor="meeting-mode">Join</Label>
-                  <Switch
-                    id="meeting-mode"
-                    checked={isCreateMode}
-                    onCheckedChange={() => setIsCreateMode(!isCreateMode)}
-                  />
-                  <Label htmlFor="meeting-mode">Create</Label>
-                </div>
-              )}
+              {/* Show create/join toggle for all users */}
+              <div className="flex items-center justify-center space-x-2">
+                <Label htmlFor="meeting-mode">Join</Label>
+                <Switch
+                  id="meeting-mode"
+                  checked={isCreateMode}
+                  onCheckedChange={() => setIsCreateMode(!isCreateMode)}
+                />
+                <Label htmlFor="meeting-mode">Create</Label>
+              </div>
 
               <div className="space-y-2">
                 <Label>
-                  {user.role === "admin"
-                    ? isCreateMode
-                      ? "Room Name" // In create mode, admin enters a custom room name.
-                      : "Meeting Link or ID" // In join mode, admin enters a link/ID.
-                    : "Meeting Link or ID"}
+                  {isCreateMode ? "Room Name" : "Meeting Link or ID"}
                 </Label>
                 <Input
                   placeholder={
-                    user.role === "admin"
-                      ? isCreateMode
-                        ? "Enter room name"
-                        : "Enter meeting link or ID"
+                    isCreateMode
+                      ? "Enter room name"
                       : "Enter meeting link or ID"
                   }
                   value={inputRoomName}
@@ -183,11 +155,9 @@ const VideoMeeting = () => {
               <Button className="w-full" onClick={handleJoinMeeting} disabled={loading}>
                 {loading
                   ? "Processing..."
-                  : user.role === "admin"
-                  ? isCreateMode
+                  : isCreateMode
                     ? "Create Meeting"
-                    : "Join Meeting"
-                  : "Join Meeting"}
+                    : "Join Meeting"}
               </Button>
             </div>
           </CardContent>

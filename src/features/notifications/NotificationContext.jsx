@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useWebSocket } from "../chat/hooks/useWebSocket";
 
 const NotificationsContext = createContext();
@@ -16,6 +16,9 @@ export const NotificationsProvider = ({ children, userId }) => {
 
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Ensure userId is string
+  const userIdStr = userId ? String(userId) : null;
+
   // Calculate overall unread notifications (could be used for a global counter)
   useEffect(() => {
     setUnreadCount(notifications.filter((notif) => !notif.read).length);
@@ -27,10 +30,10 @@ export const NotificationsProvider = ({ children, userId }) => {
 
   // addNotification now supports notifications with extra fields like chatType and chatId.
   const addNotification = useCallback((notification) => {
-    // Optionally, ignore notifications that originate from yourself
-    // e.g., if(notification.senderId === currentUserId) return;
-    if (notification.senderId === userId) {
-      // Skip self messages
+    if (!notification) return;
+    
+    // Skip self-notifications
+    if (notification.senderId === userIdStr) {
       return;
     }
     
@@ -40,6 +43,8 @@ export const NotificationsProvider = ({ children, userId }) => {
       timestamp: Date.now(),
       ...notification,
     };
+    
+    console.log("Adding notification:", newNotification);
     setNotifications((prev) => [newNotification, ...prev]);
 
     if (Notification.permission === "granted") {
@@ -47,7 +52,7 @@ export const NotificationsProvider = ({ children, userId }) => {
         body: notification.message || notification.content || "",
       });
     }
-  }, []);
+  }, [userIdStr]);
 
   const markAsRead = useCallback((id) => {
     setNotifications((prev) =>
@@ -70,8 +75,18 @@ export const NotificationsProvider = ({ children, userId }) => {
     );
   }, []);
 
-  // Initialize WebSocket – note we pass null for onIncomingMessage and addNotification for onNotification.
-  useWebSocket(userId, null, addNotification);
+  // Setup notification handler function
+  const handleNotification = useCallback((notificationData) => {
+    console.log("Received notification in handler:", notificationData);
+    addNotification(notificationData);
+  }, [addNotification]);
+
+  // Initialize WebSocket with proper handlers
+  const { sendMessage } = useWebSocket(
+    userIdStr, 
+    null,  // No message handler needed for notifications
+    handleNotification // Pass notification handler
+  );
 
   return (
     <NotificationsContext.Provider
@@ -83,6 +98,7 @@ export const NotificationsProvider = ({ children, userId }) => {
         markAllAsRead,
         clearNotifications,
         markChatNotificationsAsRead,
+        sendMessage,
       }}
     >
       {children}

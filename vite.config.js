@@ -9,8 +9,13 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false, // use true if vaultbox has a valid SSL certificate
+        secure: false,
       },
+      // '/auth': {
+      //   target: 'http://localhost:5000',
+      //   changeOrigin: true,
+      //   secure: false,
+      // },
       '/messages': {
         target: 'http://vaultbox',
         changeOrigin: true,
@@ -33,10 +38,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@ui' : path.resolve(__dirname,'./src/components/ui'),
-      '@chat' : path.resolve(__dirname,'./src/features/chat'),
-      '@login' : path.resolve(__dirname,'./src/features/login'),
-      '@meet' : path.resolve(__dirname,'./src/features/meeting'),
+      '@ui': path.resolve(__dirname, './src/components/ui'),
+      '@chat': path.resolve(__dirname, './src/features/chat'),
+      '@login': path.resolve(__dirname, './src/features/login'),
+      '@meet': path.resolve(__dirname, './src/features/meeting'),
     },
   },
 });

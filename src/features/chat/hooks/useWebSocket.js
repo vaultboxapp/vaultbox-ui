@@ -11,10 +11,20 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
       ws.current.removeAllListeners();
       ws.current.disconnect();
     }
+    
+    if (!stableUserId.current) {
+      console.warn("No user ID provided for socket connection");
+      return;
+    }
+    
+    console.log(`Attempting to connect socket for user ID: ${stableUserId.current}`);
+    
+    const userIdStr = String(stableUserId.current);
+    
     ws.current = io("/", {
       path: "/chat/socket.io",
       transports: ["websocket"],
-      query: { userId: stableUserId.current },
+      query: { userId: userIdStr },
       withCredentials: true,
       extraHeaders: { Cookie: document.cookie },
       autoConnect: true,
@@ -22,8 +32,8 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
     });
 
     ws.current.on("connect", () => {
-      console.log("WebSocket connected");
-      ws.current.emit("authenticate", { userId: stableUserId.current });
+      console.log("WebSocket connected with ID:", ws.current.id);
+      ws.current.emit("authenticate", { userId: userIdStr });
     });
 
     ws.current.on("grpMessage", (msg) => {
@@ -48,10 +58,16 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
     ws.current.on("connect_error", (error) => {
       console.error("Socket connection error:", error.message);
     });
+    
+    ws.current.on("error", (error) => {
+      console.error("Socket error:", error);
+    });
   }, [onIncomingMessage, onNotification]);
 
   useEffect(() => {
+    stableUserId.current = userId;
     connect();
+    
     return () => {
       if (ws.current) {
         console.log("Disconnecting WebSocket");
@@ -59,9 +75,8 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
         ws.current = null;
       }
     };
-  }, [connect]);
+  }, [userId, connect]);
 
-  // When sending a message, decide event based on payload type.
   const sendMessage = useCallback((payload) => {
     if (ws.current?.connected) {
       console.log("Sending message:", payload);
@@ -72,8 +87,9 @@ export const useWebSocket = (userId, onIncomingMessage, onNotification) => {
       }
     } else {
       console.warn("WebSocket not connected; message not sent");
+      connect();
     }
-  }, []);
+  }, [connect]);
 
   return { sendMessage };
 };
